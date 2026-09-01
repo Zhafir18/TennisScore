@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tennisscorer.ui.theme.BadgeBg
 import com.example.tennisscorer.ui.theme.Gold
 
 @Composable
@@ -23,7 +24,7 @@ fun ScoreBadge(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xCC000000))
+        colors = CardDefaults.cardColors(containerColor = BadgeBg)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 7.dp),

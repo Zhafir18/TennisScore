@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tennisscorer.ui.theme.CyanAccent
 import com.example.tennisscorer.ui.theme.Gold
+import com.example.tennisscorer.ui.theme.OverlayCardBg
 
 @Composable
 fun WinnerOverlay(winnerName: String, onPlayAgain: () -> Unit) {
@@ -24,7 +25,7 @@ fun WinnerOverlay(winnerName: String, onPlayAgain: () -> Unit) {
     ) {
         Card(
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A))
+            colors = CardDefaults.cardColors(containerColor = OverlayCardBg)
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 48.dp, vertical = 32.dp),

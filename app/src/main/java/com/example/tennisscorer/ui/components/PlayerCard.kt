@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tennisscorer.ui.theme.CardBg
+import com.example.tennisscorer.ui.theme.FieldBgUnfocused
+import com.example.tennisscorer.ui.theme.FieldText
 
 @Composable
 fun PlayerCard(
@@ -68,11 +70,11 @@ fun PlayerCard(
                 shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color(0xFFE2E8F0),
+                    unfocusedContainerColor = FieldBgUnfocused,
                     focusedBorderColor = accentColor,
                     unfocusedBorderColor = Color.Transparent,
-                    focusedTextColor = Color(0xFF0F172A),
-                    unfocusedTextColor = Color(0xFF0F172A)
+                    focusedTextColor = FieldText,
+                    unfocusedTextColor = FieldText
                 )
             )
         }

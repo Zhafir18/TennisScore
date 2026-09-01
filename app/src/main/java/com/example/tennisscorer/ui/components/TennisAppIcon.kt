@@ -14,6 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tennisscorer.ui.theme.IconBlue
+import com.example.tennisscorer.ui.theme.IconCenter
+import com.example.tennisscorer.ui.theme.IconRed
 
 @Composable
 fun TennisAppIcon(size: Dp = 120.dp) {
@@ -30,20 +33,20 @@ fun TennisAppIcon(size: Dp = 120.dp) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(Color(0xFF8B1A1A))
+                    .background(IconRed)
             )
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(Color(0xFF1D4ED8))
+                    .background(IconBlue)
             )
         }
         Box(
             modifier = Modifier
                 .size(size * 0.44f)
                 .clip(CircleShape)
-                .background(Color(0xFF0D0900)),
+                .background(IconCenter),
             contentAlignment = Alignment.Center
         ) {
             Text(text = "🎾", fontSize = (size.value * 0.23f).sp)

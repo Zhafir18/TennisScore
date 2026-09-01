@@ -2,6 +2,7 @@ package com.example.tennisscorer.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
@@ -11,7 +12,8 @@ import androidx.room.PrimaryKey
         parentColumns = ["matchId"],
         childColumns = ["matchId"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    indices = [Index("matchId")]
 )
 data class PointEvent(
     @PrimaryKey(autoGenerate = true) val eventId: Long = 0,

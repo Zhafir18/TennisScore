@@ -17,6 +17,7 @@ import com.example.tennisscorer.ui.components.ScoreBadge
 import com.example.tennisscorer.ui.components.WinnerOverlay
 import com.example.tennisscorer.ui.theme.ScoreBlue
 import com.example.tennisscorer.ui.theme.ScoreRed
+import com.example.tennisscorer.ui.theme.ActionBtnBg
 
 @Composable
 fun ScoreboardScreen(
@@ -89,14 +90,14 @@ fun ScoreboardScreen(
             Button(
                 onClick = onBackToInput,
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xBB000000))
+                colors = ButtonDefaults.buttonColors(containerColor = ActionBtnBg)
             ) {
                 Text("Change Player", fontSize = 12.sp, color = Color.White)
             }
             Button(
                 onClick = { engine.resetScore() },
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xBB000000))
+                colors = ButtonDefaults.buttonColors(containerColor = ActionBtnBg)
             ) {
                 Text("Reset Game", fontSize = 12.sp, color = Color.White)
             }

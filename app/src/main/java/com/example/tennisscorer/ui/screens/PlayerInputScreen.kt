@@ -21,6 +21,8 @@ import com.example.tennisscorer.ui.theme.BlueAccent
 import com.example.tennisscorer.ui.theme.CardBg
 import com.example.tennisscorer.ui.theme.RedAccent
 import com.example.tennisscorer.ui.theme.VsGreen
+import com.example.tennisscorer.ui.theme.StartBtnBg
+import com.example.tennisscorer.ui.theme.VsBadgeBg
 
 @Composable
 fun PlayerInputScreen(
@@ -76,7 +78,7 @@ fun PlayerInputScreen(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF1A2035)),
+                    .background(VsBadgeBg),
                 contentAlignment = Alignment.Center
             ) {
                 Text(text = "VS", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VsGreen)
@@ -105,7 +107,7 @@ fun PlayerInputScreen(
                 .width(200.dp)
                 .height(48.dp),
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B))
+            colors = ButtonDefaults.buttonColors(containerColor = StartBtnBg)
         ) {
             Text(text = "Start Game", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }

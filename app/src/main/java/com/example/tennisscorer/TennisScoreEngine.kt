@@ -1,5 +1,8 @@
 package com.example.tennisscorer
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,6 +13,11 @@ class TennisScoreEngine : ViewModel() {
 
     private val _scoreState = MutableStateFlow(TennisScoreState())
     val scoreState: StateFlow<TennisScoreState> = _scoreState.asStateFlow()
+
+    var p1NameInput by mutableStateOf("")
+        private set
+    var p2NameInput by mutableStateOf("")
+        private set
 
     fun pointWonBy(playerNum: Int) {
         val current = _scoreState.value
@@ -61,13 +69,8 @@ class TennisScoreEngine : ViewModel() {
 
         var finished = false
         var winner: String? = null
-        if (p1S == 2) {
-            finished = true
-            winner = current.p1Name
-        } else if (p2S == 2) {
-            finished = true
-            winner = current.p2Name
-        }
+        if (p1S == 2) { finished = true; winner = current.p1Name }
+        else if (p2S == 2) { finished = true; winner = current.p2Name }
 
         _scoreState.update {
             it.copy(
@@ -91,8 +94,9 @@ class TennisScoreEngine : ViewModel() {
     }
 
     fun setPlayerNames(p1: String, p2: String) {
-        _scoreState.update {
-            it.copy(p1Name = p1, p2Name = p2)
-        }
+        _scoreState.update { it.copy(p1Name = p1, p2Name = p2) }
     }
+
+    fun updateP1Name(name: String) { p1NameInput = name }
+    fun updateP2Name(name: String) { p2NameInput = name }
 }

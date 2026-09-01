@@ -1,12 +1,14 @@
 package com.example.tennisscorer.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,9 +22,10 @@ import com.example.tennisscorer.ui.theme.AppBg
 import com.example.tennisscorer.ui.theme.BlueAccent
 import com.example.tennisscorer.ui.theme.CardBg
 import com.example.tennisscorer.ui.theme.RedAccent
-import com.example.tennisscorer.ui.theme.VsGreen
 import com.example.tennisscorer.ui.theme.StartBtnBg
 import com.example.tennisscorer.ui.theme.VsBadgeBg
+import com.example.tennisscorer.ui.theme.VsGreen
+import kotlinx.coroutines.delay
 
 @Composable
 fun PlayerInputScreen(
@@ -30,6 +33,16 @@ fun PlayerInputScreen(
     onBack: () -> Unit,
     onStartMatch: () -> Unit
 ) {
+    var card1Visible by remember { mutableStateOf(false) }
+    var card2Visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(50)
+        card1Visible = true
+        delay(100)
+        card2Visible = true
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -66,14 +79,20 @@ fun PlayerInputScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            PlayerCard(
-                playerNum = 1,
-                name = engine.p1NameInput,
-                onNameChange = { engine.updateP1Name(it) },
-                accentColor = RedAccent,
-                cornerLabel = "Red Corner",
+            AnimatedVisibility(
+                visible = card1Visible,
+                enter = slideInHorizontally(tween(400)) { -it } + fadeIn(tween(400)),
                 modifier = Modifier.weight(1f)
-            )
+            ) {
+                PlayerCard(
+                    playerNum = 1,
+                    name = engine.p1NameInput,
+                    onNameChange = { engine.updateP1Name(it) },
+                    accentColor = RedAccent,
+                    cornerLabel = "Red Corner"
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .size(52.dp)
@@ -83,14 +102,20 @@ fun PlayerInputScreen(
             ) {
                 Text(text = "VS", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VsGreen)
             }
-            PlayerCard(
-                playerNum = 2,
-                name = engine.p2NameInput,
-                onNameChange = { engine.updateP2Name(it) },
-                accentColor = BlueAccent,
-                cornerLabel = "Blue Corner",
+
+            AnimatedVisibility(
+                visible = card2Visible,
+                enter = slideInHorizontally(tween(400)) { it } + fadeIn(tween(400)),
                 modifier = Modifier.weight(1f)
-            )
+            ) {
+                PlayerCard(
+                    playerNum = 2,
+                    name = engine.p2NameInput,
+                    onNameChange = { engine.updateP2Name(it) },
+                    accentColor = BlueAccent,
+                    cornerLabel = "Blue Corner"
+                )
+            }
         }
 
         Button(

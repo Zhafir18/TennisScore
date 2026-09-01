@@ -1,5 +1,7 @@
 package com.example.tennisscorer.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,9 +17,11 @@ import androidx.compose.ui.unit.sp
 import com.example.tennisscorer.TennisScoreEngine
 import com.example.tennisscorer.ui.components.ScoreBadge
 import com.example.tennisscorer.ui.components.WinnerOverlay
+import com.example.tennisscorer.ui.theme.ActionBtnBg
 import com.example.tennisscorer.ui.theme.ScoreBlue
 import com.example.tennisscorer.ui.theme.ScoreRed
-import com.example.tennisscorer.ui.theme.ActionBtnBg
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun ScoreboardScreen(
@@ -25,6 +29,7 @@ fun ScoreboardScreen(
     onBackToInput: () -> Unit
 ) {
     val state by engine.scoreState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val totalGames = state.p1Games + state.p2Games + state.p1Sets + state.p2Sets
     val isSwapped  = (totalGames % 2 != 0)
@@ -39,6 +44,12 @@ fun ScoreboardScreen(
     val rightBgColor  = if (!isSwapped) ScoreBlue            else ScoreRed
     val rightPlayerId = if (!isSwapped) 2                    else 1
 
+    var flashLeft  by remember { mutableStateOf(false) }
+    var flashRight by remember { mutableStateOf(false) }
+
+    val flashLeftAlpha  by animateFloatAsState(if (flashLeft)  0.28f else 0f, tween(100), label = "fl")
+    val flashRightAlpha by animateFloatAsState(if (flashRight) 0.28f else 0f, tween(100), label = "fr")
+
     Box(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
             Box(
@@ -46,27 +57,76 @@ fun ScoreboardScreen(
                     .weight(1f)
                     .fillMaxHeight()
                     .background(leftBgColor)
-                    .clickable(enabled = !state.isMatchFinished) { engine.pointWonBy(leftPlayerId) },
+                    .clickable(enabled = !state.isMatchFinished) {
+                        engine.pointWonBy(leftPlayerId)
+                        scope.launch {
+                            flashLeft = true
+                            delay(220)
+                            flashLeft = false
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = leftName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = leftScore, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text(leftName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(Modifier.height(8.dp))
+                    AnimatedContent(
+                        targetState = leftScore,
+                        transitionSpec = {
+                            (slideInVertically(tween(200)) { -it } + fadeIn(tween(200)))
+                                .togetherWith(slideOutVertically(tween(200)) { it } + fadeOut(tween(200)))
+                                .using(SizeTransform(clip = false))
+                        },
+                        label = "leftScore"
+                    ) { score ->
+                        Text(score, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    }
+                }
+                if (flashLeftAlpha > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.White.copy(alpha = flashLeftAlpha))
+                    )
                 }
             }
+
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
                     .background(rightBgColor)
-                    .clickable(enabled = !state.isMatchFinished) { engine.pointWonBy(rightPlayerId) },
+                    .clickable(enabled = !state.isMatchFinished) {
+                        engine.pointWonBy(rightPlayerId)
+                        scope.launch {
+                            flashRight = true
+                            delay(220)
+                            flashRight = false
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = rightName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = rightScore, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text(rightName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(Modifier.height(8.dp))
+                    AnimatedContent(
+                        targetState = rightScore,
+                        transitionSpec = {
+                            (slideInVertically(tween(200)) { -it } + fadeIn(tween(200)))
+                                .togetherWith(slideOutVertically(tween(200)) { it } + fadeOut(tween(200)))
+                                .using(SizeTransform(clip = false))
+                        },
+                        label = "rightScore"
+                    ) { score ->
+                        Text(score, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    }
+                }
+                if (flashRightAlpha > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.White.copy(alpha = flashRightAlpha))
+                    )
                 }
             }
         }

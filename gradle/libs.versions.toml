@@ -11,6 +11,8 @@ composeBom = "2026.02.01"
 navigationCompose = "2.8.5"
 ksp = "2.2.10-2.0.2"
 room = "2.7.1"
+camerax = "1.4.1"
+mockk   = "1.13.8"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +35,11 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+camerax-core     = { group = "androidx.camera", name = "camera-core",     version.ref = "camerax" }
+camerax-camera2  = { group = "androidx.camera", name = "camera-camera2",  version.ref = "camerax" }
+camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
+camerax-view     = { group = "androidx.camera", name = "camera-view",     version.ref = "camerax" }
+mockk            = { group = "io.mockk",        name = "mockk",           version.ref = "mockk"   }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

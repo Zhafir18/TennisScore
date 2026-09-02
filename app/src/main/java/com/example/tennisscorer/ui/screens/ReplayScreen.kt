@@ -48,11 +48,25 @@ fun ReplayScreen(
     val progress by vm.progress.collectAsState()
     val record by vm.matchRecord.collectAsState()
     val loadError by vm.loadError.collectAsState()
+    val isEmpty by vm.isEmpty.collectAsState()
 
     if (loadError) {
         Box(modifier = Modifier.fillMaxSize().background(AppBg), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Data tidak tersedia", color = Color.White, fontSize = 16.sp)
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = CyanAccent)) {
+                    Text("Kembali")
+                }
+            }
+        }
+        return
+    }
+
+    if (isEmpty) {
+        Box(modifier = Modifier.fillMaxSize().background(AppBg), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Tidak ada poin tercatat", color = Color.White, fontSize = 16.sp)
                 Spacer(Modifier.height(16.dp))
                 Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = CyanAccent)) {
                     Text("Kembali")

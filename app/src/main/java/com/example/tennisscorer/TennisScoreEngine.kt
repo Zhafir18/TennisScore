@@ -53,7 +53,7 @@ class TennisScoreEngine(private val repository: MatchRepository) : ViewModel() {
                     ),
                     snapshot
                 )
-            }
+            }.onFailure { android.util.Log.e("TennisScorer", "persistMatch failed", it) }
         }
     }
 

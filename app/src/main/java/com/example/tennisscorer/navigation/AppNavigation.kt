@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.tennisscorer.TennisScoreEngine
 import com.example.tennisscorer.data.MatchRepository
+import com.example.tennisscorer.ui.screens.CameraScreen
 import com.example.tennisscorer.ui.screens.HistoryScreen
 import com.example.tennisscorer.ui.screens.PlayerInputScreen
 import com.example.tennisscorer.ui.screens.ReplayScreen
@@ -34,8 +35,9 @@ fun AppNavigation(engine: TennisScoreEngine, repository: MatchRepository) {
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(
-                onStart   = { navController.navigate(Screen.Input.route) },
-                onHistory = { navController.navigate(Screen.History.route) }
+                onStart        = { navController.navigate(Screen.Input.route) },
+                onHistory      = { navController.navigate(Screen.History.route) },
+                onBallTracking = { navController.navigate(Screen.BallTracking.route) }
             )
         }
         composable(Screen.Input.route) {
@@ -68,6 +70,9 @@ fun AppNavigation(engine: TennisScoreEngine, repository: MatchRepository) {
                 repository = repository,
                 onBack     = { navController.popBackStack() }
             )
+        }
+        composable(Screen.BallTracking.route) {
+            CameraScreen(onBack = { navController.popBackStack() })
         }
     }
 }

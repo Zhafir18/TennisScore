@@ -41,4 +41,8 @@ class BallTrackingViewModelTest {
     @Test fun `cameraExecutor not null`() {
         assertNotNull(vm.cameraExecutor)
     }
+
+    @Test fun `detections starts empty`() {
+        assertTrue(vm.detections.value.isEmpty())
+    }
 }

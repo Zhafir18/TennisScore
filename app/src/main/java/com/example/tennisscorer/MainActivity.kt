@@ -13,10 +13,9 @@ import com.example.tennisscorer.navigation.AppNavigation
 import com.example.tennisscorer.ui.theme.TennisScorerTheme
 
 class MainActivity : ComponentActivity() {
-    private val engine: TennisScoreEngine by viewModels {
-        val db = TennisScorerDatabase.getInstance(applicationContext)
-        TennisScoreEngine.Factory(MatchRepository(db.matchDao()))
-    }
+    private val db by lazy { TennisScorerDatabase.getInstance(applicationContext) }
+    private val repository by lazy { MatchRepository(db.matchDao()) }
+    private val engine: TennisScoreEngine by viewModels { TennisScoreEngine.Factory(repository) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +26,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             TennisScorerTheme {
-                AppNavigation(engine = engine)
+                AppNavigation(engine = engine, repository = repository)
             }
         }
     }

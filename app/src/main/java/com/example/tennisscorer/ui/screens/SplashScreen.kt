@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onStart: () -> Unit) {
+fun SplashScreen(onStart: () -> Unit, onHistory: () -> Unit) {
     val iconScale    = remember { Animatable(0.5f) }
     val iconAlpha    = remember { Animatable(0f) }
     val titleAlpha   = remember { Animatable(0f) }
@@ -116,6 +116,19 @@ fun SplashScreen(onStart: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = CyanAccent)
             ) {
                 Text(text = "Start", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onHistory,
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(40.dp)
+                    .scale(btnScale.value)
+                    .graphicsLayer(alpha = btnAlpha.value),
+                shape = RoundedCornerShape(22.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CyanAccent)
+            ) {
+                Text(text = "Riwayat", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = CyanAccent)
             }
         }
     }

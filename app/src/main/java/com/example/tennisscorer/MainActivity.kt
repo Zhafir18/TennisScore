@@ -7,11 +7,16 @@ import androidx.activity.viewModels
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.tennisscorer.data.MatchRepository
+import com.example.tennisscorer.data.TennisScorerDatabase
 import com.example.tennisscorer.navigation.AppNavigation
 import com.example.tennisscorer.ui.theme.TennisScorerTheme
 
 class MainActivity : ComponentActivity() {
-    private val engine: TennisScoreEngine by viewModels()
+    private val engine: TennisScoreEngine by viewModels {
+        val db = TennisScorerDatabase.getInstance(applicationContext)
+        TennisScoreEngine.Factory(MatchRepository(db.matchDao()))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

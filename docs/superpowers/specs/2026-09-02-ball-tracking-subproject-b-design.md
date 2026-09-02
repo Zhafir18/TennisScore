@@ -14,6 +14,20 @@ Sub-proyek B tidak melakukan tracking trajektori — itu Sub-proyek D (Kalman fi
 
 ---
 
+## Arsitektur Navigasi Final (konteks)
+
+Dua mode match yang akan ada setelah semua sub-proyek selesai:
+
+```
+SplashScreen
+├── "Start"         → PlayerInput → ScoreboardScreen (manual tapping — existing, tidak berubah)
+└── "Ball Tracking" → PlayerInput → CameraGameScreen (kamera aktif, skor otomatis)  ← Sub-proyek E
+```
+
+Sub-proyek B membangun fondasi detection layer (`BallDetector` + overlay). `CameraScreen` saat ini berfungsi sebagai debug/preview screen. Sub-proyek E yang akan mengintegrasikan `TennisScoreEngine.pointWonBy()` dengan output bounce detection dan mewiring navigasi "Ball Tracking" → PlayerInput → CameraGameScreen.
+
+---
+
 ## Arsitektur
 
 Pipeline lengkap ball tracking:

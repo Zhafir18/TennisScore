@@ -14,6 +14,7 @@ room = "2.7.1"
 camerax = "1.4.1"
 mockk   = "1.13.8"
 tflite-task-vision = "0.4.4"
+opencv = "4.9.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -42,6 +43,7 @@ camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", vers
 camerax-view     = { group = "androidx.camera", name = "camera-view",     version.ref = "camerax" }
 mockk            = { group = "io.mockk",        name = "mockk",           version.ref = "mockk"   }
 tflite-task-vision = { group = "org.tensorflow", name = "tensorflow-lite-task-vision", version.ref = "tflite-task-vision" }
+opencv           = { group = "org.opencv",       name = "opencv",          version.ref = "opencv"  }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

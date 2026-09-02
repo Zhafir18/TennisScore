@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.tflite.task.vision)
+    implementation(libs.opencv)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -43,7 +43,7 @@ fun CameraScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> viewModel.onPermissionResult(granted) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(lifecycleOwner) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED
         ) {

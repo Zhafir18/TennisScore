@@ -12,7 +12,7 @@ class BallTrackingViewModelTest {
 
     private val vm = BallTrackingViewModel()
 
-    @After fun tearDown() { vm.onCleared() }
+    @After fun tearDown() { vm.cameraExecutor.shutdown() }
 
     @Test fun `permissionGranted starts false`() {
         assertFalse(vm.permissionGranted.value)

@@ -22,6 +22,7 @@ class ImageAnalyzerTest {
         val mockProxy = mockk<ImageProxy>(relaxed = true)
         analyzer.analyze(mockProxy)
         assertEquals(mockProxy, received)
+        verify { mockProxy.close() }
     }
 
     @Test fun `frame closed after analyzer cleared`() {

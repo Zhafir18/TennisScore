@@ -36,8 +36,12 @@ class BallTrackingViewModel : ViewModel() {
         imageAnalyzer.setFrameAnalyzer(null)
     }
 
-    override fun onCleared() {
+    public override fun onCleared() {
         super.onCleared()
+        shutdown()
+    }
+
+    fun shutdown() {
         cameraExecutor.shutdown()
     }
 }

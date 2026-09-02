@@ -4,7 +4,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 
 class ImageAnalyzer : ImageAnalysis.Analyzer {
-    private var frameAnalyzer: FrameAnalyzer? = null
+    @Volatile private var frameAnalyzer: FrameAnalyzer? = null
 
     fun setFrameAnalyzer(analyzer: FrameAnalyzer?) {
         frameAnalyzer = analyzer

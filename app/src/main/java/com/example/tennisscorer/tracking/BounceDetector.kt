@@ -26,9 +26,14 @@ class BounceDetector {
             lastSide = currentSide
         }
 
-        // Step 2: cooldown & predicted guard
-        if (isPredicted || cooldownFrames > 0) {
-            cooldownFrames = maxOf(0, cooldownFrames - 1)
+        // Step 2a: predicted guard (no sensor input — skip, do not count down cooldown)
+        if (isPredicted) {
+            previousVy = vy
+            return null
+        }
+        // Step 2b: cooldown guard
+        if (cooldownFrames > 0) {
+            cooldownFrames--
             previousVy = vy
             return null
         }
@@ -58,7 +63,7 @@ class BounceDetector {
             val winner = when {
                 courtPos.y < 0f                                  -> 1
                 courtPos.y > HomographyMapper.COURT_LENGTH_M     -> 2
-                else                                             -> if (lastSide == 1) 2 else 1
+                else                                             -> if (lastSide == 1) 2 else 1  // lastSide==0 edge case: defaults to P1 wins (first frame out is very rare)
             }
             BounceEvent.PointAwarded(winner = winner, isOut = true, courtPos = courtPos)
         }

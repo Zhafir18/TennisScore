@@ -110,6 +110,19 @@ class BounceDetectorTest {
         assertTrue(result.isOut)
     }
 
+    @Test fun `bounce OUT sideline lastSide=2 returns PointAwarded winner=1`() {
+        // Set lastSide=2 via a P2-half tracking frame (vy=0f — below threshold, no bounce)
+        detector.process(0f, pos(W / 2f, NET + 1f), false)
+        // Bounce OUT at sideline (x < 0) in P2 half
+        val outPos = pos(-1f, NET + 1f)
+        detector.process(VY, outPos, false)
+        val result = detector.process(-VY, outPos, false)
+        assertNotNull(result)
+        result as BounceEvent.PointAwarded
+        assertEquals(1, result.winner)
+        assertTrue(result.isOut)
+    }
+
     @Test fun `bounce OUT sideline with lastSide=1 returns winner=2`() {
         // Set lastSide=1 via P1-half tracking frame
         detector.process(0f, pos(W / 2f, NET / 2f - 1f), false)

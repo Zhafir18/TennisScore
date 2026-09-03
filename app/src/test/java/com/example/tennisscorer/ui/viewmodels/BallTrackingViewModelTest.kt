@@ -2,6 +2,7 @@ package com.example.tennisscorer.ui.viewmodels
 
 import android.content.Context
 import android.graphics.PointF
+import android.graphics.RectF
 import com.example.tennisscorer.TennisScoreEngine
 import com.example.tennisscorer.tracking.BounceEvent
 import com.example.tennisscorer.tracking.CalibrationState
@@ -95,6 +96,19 @@ class BallTrackingViewModelTest {
         // → bounceDetector.process(vy, null, ...) returns null → engine never called
         // Send 20 identical detections — vy stays near 0, courtPos=null regardless
         repeat(20) { vm.processBallUpdate(null) }
+        verify(exactly = 0) { mockEngine.pointWonBy(any()) }
+    }
+
+    @Test fun `real detection without calibration does not call pointWonBy`() {
+        // Supplies real Detection objects (not null) so KalmanTracker produces isPredicted=false,
+        // but calibrationState=Uncalibrated (default) → mapper=null → courtPos=null.
+        // This exercises the courtPos=null code path in processBallUpdate on real detections.
+        val detection = Detection(
+            boundingBox = RectF(0.1f, 0.1f, 0.2f, 0.2f),
+            confidence = 0.9f
+        )
+        vm.processBallUpdate(detection)
+        vm.processBallUpdate(detection)
         verify(exactly = 0) { mockEngine.pointWonBy(any()) }
     }
 }

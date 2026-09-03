@@ -30,6 +30,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tennisscorer.tracking.CalibrationState
 import com.example.tennisscorer.ui.theme.ActionBtnBg
 import com.example.tennisscorer.ui.theme.CyanAccent
 import com.example.tennisscorer.ui.viewmodels.BallTrackingViewModel
@@ -110,6 +111,7 @@ fun CameraScreen(
 
             else -> {
                 val detections by viewModel.detections.collectAsState()
+                val calibrationState by viewModel.calibrationState.collectAsState()
                 val previewView = remember { PreviewView(context) }
 
                 AndroidView(
@@ -141,6 +143,42 @@ fun CameraScreen(
                     }
                 }
 
+                when (calibrationState) {
+                    is CalibrationState.Uncalibrated,
+                    is CalibrationState.Calibrating -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.45f))
+                        ) {
+                            Column(
+                                modifier = Modifier.align(Alignment.Center),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                CircularProgressIndicator(color = CyanAccent)
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    text = "Mendeteksi lapangan...",
+                                    color = Color.White,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    }
+                    is CalibrationState.Failed -> {
+                        Text(
+                            text = "Kalibrasi gagal — koordinat lapangan tidak tersedia",
+                            color = Color.Yellow,
+                            fontSize = 11.sp,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 8.dp, start = 16.dp, end = 16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    is CalibrationState.Calibrated -> { /* no overlay — ball detection active */ }
+                }
+
                 LaunchedEffect(lifecycleOwner) {
                     val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
                     cameraProviderFuture.addListener({
@@ -164,7 +202,7 @@ fun CameraScreen(
                                 preview,
                                 imageAnalysis
                             )
-                            viewModel.initDetector(context.applicationContext)
+                            viewModel.initCalibration(context.applicationContext)
                         } catch (e: Exception) {
                             viewModel.onCameraError("Kamera tidak dapat dibuka: ${e.message}")
                         }

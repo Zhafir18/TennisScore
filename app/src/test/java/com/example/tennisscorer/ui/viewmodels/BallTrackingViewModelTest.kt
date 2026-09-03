@@ -1,5 +1,8 @@
 package com.example.tennisscorer.ui.viewmodels
 
+import android.content.Context
+import com.example.tennisscorer.tracking.CalibrationState
+import io.mockk.mockk
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -44,5 +47,22 @@ class BallTrackingViewModelTest {
 
     @Test fun `detections starts empty`() {
         assertTrue(vm.detections.value.isEmpty())
+    }
+
+    @Test fun `calibrationState starts Uncalibrated`() {
+        assertTrue(vm.calibrationState.value is CalibrationState.Uncalibrated)
+    }
+
+    @Test fun `initCalibration transitions to Calibrating`() {
+        val ctx = mockk<Context>(relaxed = true)
+        vm.initCalibration(ctx)
+        assertTrue(vm.calibrationState.value is CalibrationState.Calibrating)
+    }
+
+    @Test fun `initCalibration is idempotent`() {
+        val ctx = mockk<Context>(relaxed = true)
+        vm.initCalibration(ctx)
+        vm.initCalibration(ctx)
+        assertTrue(vm.calibrationState.value is CalibrationState.Calibrating)
     }
 }

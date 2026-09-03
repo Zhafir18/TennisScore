@@ -3,8 +3,12 @@ package com.example.tennisscorer.ui.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.example.tennisscorer.tracking.BallDetector
+import com.example.tennisscorer.tracking.CalibrationState
+import com.example.tennisscorer.tracking.CourtDetector
 import com.example.tennisscorer.tracking.Detection
 import com.example.tennisscorer.tracking.FrameAnalyzer
+import com.example.tennisscorer.tracking.HomographyMapper
+import com.example.tennisscorer.tracking.HomographyResult
 import com.example.tennisscorer.tracking.ImageAnalyzer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,10 +27,14 @@ class BallTrackingViewModel : ViewModel() {
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
     val detections: StateFlow<List<Detection>> = _detections.asStateFlow()
 
+    private val _calibrationState = MutableStateFlow<CalibrationState>(CalibrationState.Uncalibrated)
+    val calibrationState: StateFlow<CalibrationState> = _calibrationState.asStateFlow()
+
     val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     val imageAnalyzer: ImageAnalyzer = ImageAnalyzer()
 
     private var ballDetector: BallDetector? = null
+    private var courtDetector: CourtDetector? = null
 
     fun onPermissionResult(granted: Boolean) {
         _permissionGranted.value = granted
@@ -51,7 +59,25 @@ class BallTrackingViewModel : ViewModel() {
         setFrameAnalyzer(detector)
     }
 
+    fun initCalibration(context: Context) {
+        if (_calibrationState.value != CalibrationState.Uncalibrated) return
+        val appContext = context.applicationContext
+        _calibrationState.value = CalibrationState.Calibrating
+        val detector = CourtDetector { result ->
+            when (result) {
+                is HomographyResult.Success ->
+                    _calibrationState.value = CalibrationState.Calibrated(HomographyMapper(result.matrix))
+                is HomographyResult.Failed ->
+                    _calibrationState.value = CalibrationState.Failed(result.reason)
+            }
+            initDetector(appContext)
+        }
+        courtDetector = detector
+        setFrameAnalyzer(detector)
+    }
+
     override fun onCleared() {
+        courtDetector?.close()
         ballDetector?.close()
         super.onCleared()
         cameraExecutor.shutdown()

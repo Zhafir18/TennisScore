@@ -30,6 +30,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tennisscorer.TennisScoreEngine
 import com.example.tennisscorer.tracking.CalibrationState
 import com.example.tennisscorer.tracking.TrackedBall
 import com.example.tennisscorer.ui.theme.ActionBtnBg
@@ -38,7 +39,8 @@ import com.example.tennisscorer.ui.viewmodels.BallTrackingViewModel
 
 @Composable
 fun CameraScreen(
-    viewModel: BallTrackingViewModel = viewModel(),
+    engine: TennisScoreEngine,
+    viewModel: BallTrackingViewModel = viewModel(factory = BallTrackingViewModel.factory(engine)),
     onBack: () -> Unit
 ) {
     val permissionGranted by viewModel.permissionGranted.collectAsState()

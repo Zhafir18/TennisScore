@@ -72,7 +72,7 @@ fun AppNavigation(engine: TennisScoreEngine, repository: MatchRepository) {
             )
         }
         composable(Screen.BallTracking.route) {
-            CameraScreen(onBack = { navController.popBackStack() })
+            CameraScreen(engine = engine, onBack = { navController.popBackStack() })
         }
     }
 }

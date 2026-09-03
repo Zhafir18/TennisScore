@@ -1,9 +1,13 @@
 package com.example.tennisscorer.ui.viewmodels
 
 import android.content.Context
+import android.graphics.PointF
+import com.example.tennisscorer.TennisScoreEngine
+import com.example.tennisscorer.tracking.BounceEvent
 import com.example.tennisscorer.tracking.CalibrationState
+import com.example.tennisscorer.tracking.Detection
 import com.example.tennisscorer.tracking.TrackedBall
-import io.mockk.mockk
+import io.mockk.*
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,7 +18,8 @@ import org.junit.Test
 
 class BallTrackingViewModelTest {
 
-    private val vm = BallTrackingViewModel()
+    private val mockEngine = mockk<TennisScoreEngine>(relaxed = true)
+    private val vm = BallTrackingViewModel(mockEngine)
 
     @After fun tearDown() { vm.cameraExecutor.shutdown() }
 
@@ -74,5 +79,22 @@ class BallTrackingViewModelTest {
     @Test fun `resetTrajectory sets trackedBall to null`() {
         vm.resetTrajectory()
         assertNull(vm.trackedBall.value)
+    }
+
+    // --- Task 2 new tests ---
+
+    @Test fun `handleBounceEvent PointAwarded calls engine pointWonBy and nulls trackedBall`() {
+        val courtPos = PointF().also { it.x = 5f; it.y = 3f }
+        vm.handleBounceEvent(BounceEvent.PointAwarded(winner = 2, isOut = false, courtPos = courtPos))
+        verify { mockEngine.pointWonBy(2) }
+        assertNull(vm.trackedBall.value)
+    }
+
+    @Test fun `bounce without calibration does not call pointWonBy`() {
+        // calibrationState = Uncalibrated (default) → mapper=null → courtPos=null
+        // → bounceDetector.process(vy, null, ...) returns null → engine never called
+        // Send 20 identical detections — vy stays near 0, courtPos=null regardless
+        repeat(20) { vm.processBallUpdate(null) }
+        verify(exactly = 0) { mockEngine.pointWonBy(any()) }
     }
 }

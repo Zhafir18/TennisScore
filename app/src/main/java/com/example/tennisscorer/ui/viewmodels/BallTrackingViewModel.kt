@@ -91,9 +91,9 @@ class BallTrackingViewModel : ViewModel() {
     }
 
     override fun onCleared() {
+        cameraExecutor.shutdown()
         courtDetector?.close()
         ballDetector?.close()
         super.onCleared()
-        cameraExecutor.shutdown()
     }
 }

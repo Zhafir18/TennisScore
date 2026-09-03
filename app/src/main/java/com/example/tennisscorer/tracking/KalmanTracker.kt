@@ -2,18 +2,18 @@ package com.example.tennisscorer.tracking
 
 import android.graphics.PointF
 
-private fun pointF(x: Float, y: Float): PointF {
-    val p = PointF()
-    p.x = x
-    p.y = y
-    return p
-}
-
 class KalmanTracker {
 
     companion object {
         const val PROCESS_NOISE_Q = 1e-4f
         const val MEASUREMENT_NOISE_R = 1e-2f
+
+        private fun pointF(x: Float, y: Float): PointF {
+            val p = PointF()
+            p.x = x
+            p.y = y
+            return p
+        }
 
         // F: 4x4 state transition matrix, row-major
         // [1,0,1,0]  cx  += vx

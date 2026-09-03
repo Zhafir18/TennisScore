@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tennisscorer.tracking.CalibrationState
+import com.example.tennisscorer.tracking.TrackedBall
 import com.example.tennisscorer.ui.theme.ActionBtnBg
 import com.example.tennisscorer.ui.theme.CyanAccent
 import com.example.tennisscorer.ui.viewmodels.BallTrackingViewModel
@@ -112,6 +113,7 @@ fun CameraScreen(
             else -> {
                 val detections by viewModel.detections.collectAsState()
                 val calibrationState by viewModel.calibrationState.collectAsState()
+                val trackedBall by viewModel.trackedBall.collectAsState()
                 val previewView = remember { PreviewView(context) }
 
                 AndroidView(
@@ -140,6 +142,24 @@ fun CameraScreen(
                                 textSize = 12.sp.toPx()
                             }
                         )
+                    }
+
+                    // Trail
+                    trackedBall?.trajectory?.zipWithNext()?.forEach { (a, b) ->
+                        drawLine(
+                            color = CyanAccent.copy(alpha = 0.5f),
+                            start = Offset(a.x * size.width, a.y * size.height),
+                            end   = Offset(b.x * size.width, b.y * size.height),
+                            strokeWidth = 2.dp.toPx()
+                        )
+                    }
+
+                    // Crosshair
+                    trackedBall?.let { ball ->
+                        val cx = ball.position.x * size.width
+                        val cy = ball.position.y * size.height
+                        val color = if (ball.isPredicted) Color.Yellow else CyanAccent
+                        drawCircle(color = color, radius = 6.dp.toPx(), center = Offset(cx, cy))
                     }
                 }
 

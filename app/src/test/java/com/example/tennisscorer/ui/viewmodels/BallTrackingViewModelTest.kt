@@ -2,6 +2,7 @@ package com.example.tennisscorer.ui.viewmodels
 
 import android.content.Context
 import com.example.tennisscorer.tracking.CalibrationState
+import com.example.tennisscorer.tracking.TrackedBall
 import io.mockk.mockk
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -64,5 +65,14 @@ class BallTrackingViewModelTest {
         vm.initCalibration(ctx)
         vm.initCalibration(ctx)
         assertTrue(vm.calibrationState.value is CalibrationState.Calibrating)
+    }
+
+    @Test fun `trackedBall starts null`() {
+        assertNull(vm.trackedBall.value)
+    }
+
+    @Test fun `resetTrajectory sets trackedBall to null`() {
+        vm.resetTrajectory()
+        assertNull(vm.trackedBall.value)
     }
 }

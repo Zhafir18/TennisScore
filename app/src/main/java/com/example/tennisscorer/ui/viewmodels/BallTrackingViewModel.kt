@@ -10,6 +10,8 @@ import com.example.tennisscorer.tracking.FrameAnalyzer
 import com.example.tennisscorer.tracking.HomographyMapper
 import com.example.tennisscorer.tracking.HomographyResult
 import com.example.tennisscorer.tracking.ImageAnalyzer
+import com.example.tennisscorer.tracking.KalmanTracker
+import com.example.tennisscorer.tracking.TrackedBall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,9 +32,13 @@ class BallTrackingViewModel : ViewModel() {
     private val _calibrationState = MutableStateFlow<CalibrationState>(CalibrationState.Uncalibrated)
     val calibrationState: StateFlow<CalibrationState> = _calibrationState.asStateFlow()
 
+    private val _trackedBall = MutableStateFlow<TrackedBall?>(null)
+    val trackedBall: StateFlow<TrackedBall?> = _trackedBall.asStateFlow()
+
     val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     val imageAnalyzer: ImageAnalyzer = ImageAnalyzer()
 
+    private val kalmanTracker = KalmanTracker()
     private var ballDetector: BallDetector? = null
     private var courtDetector: CourtDetector? = null
 
@@ -54,9 +60,17 @@ class BallTrackingViewModel : ViewModel() {
 
     fun initDetector(context: Context) {
         if (ballDetector != null) return
-        val detector = BallDetector(context.applicationContext) { _detections.value = it }
+        val detector = BallDetector(context.applicationContext) { detections ->
+            _detections.value = detections
+            _trackedBall.value = kalmanTracker.update(detections.firstOrNull())
+        }
         ballDetector = detector
         setFrameAnalyzer(detector)
+    }
+
+    fun resetTrajectory() {
+        kalmanTracker.reset()
+        _trackedBall.value = null
     }
 
     fun initCalibration(context: Context) {

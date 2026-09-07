@@ -11,6 +11,7 @@ import com.example.tennisscorer.data.MatchRepository
 import com.example.tennisscorer.data.TennisScorerDatabase
 import com.example.tennisscorer.navigation.AppNavigation
 import com.example.tennisscorer.ui.theme.TennisScorerTheme
+import org.opencv.android.OpenCVLoader
 
 class MainActivity : ComponentActivity() {
     private val db by lazy { TennisScorerDatabase.getInstance(applicationContext) }
@@ -19,6 +20,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        OpenCVLoader.initLocal()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
             hide(WindowInsetsCompat.Type.systemBars())

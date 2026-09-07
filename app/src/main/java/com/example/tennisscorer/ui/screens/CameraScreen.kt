@@ -116,6 +116,7 @@ fun CameraScreen(
                 val detections by viewModel.detections.collectAsState()
                 val calibrationState by viewModel.calibrationState.collectAsState()
                 val trackedBall by viewModel.trackedBall.collectAsState()
+                val ballDetectorError by viewModel.ballDetectorError.collectAsState()
                 val previewView = remember { PreviewView(context) }
 
                 AndroidView(
@@ -231,14 +232,25 @@ fun CameraScreen(
                     }, ContextCompat.getMainExecutor(context))
                 }
 
-                Text(
-                    text = "Camera ready",
-                    color = CyanAccent,
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
-                )
+                if (ballDetectorError != null) {
+                    Text(
+                        text = "⚠ $ballDetectorError",
+                        color = Color.Yellow,
+                        fontSize = 11.sp,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Camera ready",
+                        color = CyanAccent,
+                        fontSize = 12.sp,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                    )
+                }
 
                 Button(
                     onClick = onBack,

@@ -40,6 +40,9 @@ class BallTrackingViewModel(
     private val _cameraError = MutableStateFlow<String?>(null)
     val cameraError: StateFlow<String?> = _cameraError.asStateFlow()
 
+    private val _ballDetectorError = MutableStateFlow<String?>(null)
+    val ballDetectorError: StateFlow<String?> = _ballDetectorError.asStateFlow()
+
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
     val detections: StateFlow<List<Detection>> = _detections.asStateFlow()
 
@@ -97,12 +100,16 @@ class BallTrackingViewModel(
 
     fun initDetector(context: Context) {
         if (ballDetector != null) return
-        val detector = BallDetector(context.applicationContext) { detections ->
-            _detections.value = detections
-            processBallUpdate(detections.firstOrNull())
+        try {
+            val detector = BallDetector(context.applicationContext) { detections ->
+                _detections.value = detections
+                processBallUpdate(detections.firstOrNull())
+            }
+            ballDetector = detector
+            setFrameAnalyzer(detector)
+        } catch (e: Throwable) {
+            _ballDetectorError.value = "Ball detection tidak tersedia di perangkat ini"
         }
-        ballDetector = detector
-        setFrameAnalyzer(detector)
     }
 
     fun resetTrajectory() {

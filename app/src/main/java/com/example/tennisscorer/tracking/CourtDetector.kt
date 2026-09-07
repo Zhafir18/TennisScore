@@ -50,9 +50,11 @@ class CourtDetector(
     fun close() { /* Mat released per-frame in tryDetectCourt — no persistent state */ }
 
     private fun tryDetectCourt(bitmap: Bitmap): FloatArray? {
-        val rgbaMat = Mat(); val grayMat = Mat(); val edgesMat = Mat(); val linesMat = Mat()
+        var rgbaMat: Mat? = null; var grayMat: Mat? = null
+        var edgesMat: Mat? = null; var linesMat: Mat? = null
         var H: Mat? = null; var src: MatOfPoint2f? = null; var dst: MatOfPoint2f? = null
         return try {
+            rgbaMat = Mat(); grayMat = Mat(); edgesMat = Mat(); linesMat = Mat()
             Utils.bitmapToMat(bitmap, rgbaMat)
             Imgproc.cvtColor(rgbaMat, grayMat, Imgproc.COLOR_RGBA2GRAY)
             Imgproc.Canny(grayMat, edgesMat, CANNY_LOW, CANNY_HIGH)
@@ -103,10 +105,10 @@ class CourtDetector(
             )
             H = Imgproc.getPerspectiveTransform(src, dst)
             FloatArray(9) { i -> H.get(i / 3, i % 3)[0].toFloat() }
-        } catch (_: Exception) {
+        } catch (_: Throwable) {
             null
         } finally {
-            rgbaMat.release(); grayMat.release(); edgesMat.release(); linesMat.release()
+            rgbaMat?.release(); grayMat?.release(); edgesMat?.release(); linesMat?.release()
             H?.release(); src?.release(); dst?.release()
         }
     }

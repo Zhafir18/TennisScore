@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.delay
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tennisscorer.TennisScoreEngine
 import com.example.tennisscorer.data.BounceRepository
@@ -53,17 +54,27 @@ fun CameraScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    var audioGranted by remember { mutableStateOf(false) }
+
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted -> viewModel.onPermissionResult(granted) }
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        viewModel.onPermissionResult(permissions[Manifest.permission.CAMERA] == true)
+        audioGranted = permissions[Manifest.permission.RECORD_AUDIO] == true
+    }
 
     LaunchedEffect(lifecycleOwner) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
+        val cameraOk = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        val audioOk = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        if (cameraOk) {
             viewModel.onPermissionResult(true)
+            audioGranted = audioOk
         } else {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
+            permissionLauncher.launch(
+                arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+            )
         }
     }
 
@@ -107,7 +118,11 @@ fun CameraScreen(
                     )
                     Spacer(Modifier.height(20.dp))
                     Button(
-                        onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                        onClick = {
+                            permissionLauncher.launch(
+                                arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+                            )
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = CyanAccent)
                     ) { Text("Beri Izin Kamera", color = Color.White) }
                     Spacer(Modifier.height(8.dp))
@@ -124,6 +139,30 @@ fun CameraScreen(
                 val ballDetectorError by viewModel.ballDetectorError.collectAsState()
                 val heatmapBitmap by viewModel.heatmapBitmap.collectAsState()
                 val bounceCount by viewModel.bounceCount.collectAsState()
+                val isRecording by viewModel.isRecording.collectAsState()
+                val isVideoAvailable by viewModel.isVideoAvailable.collectAsState()
+                val recordingError by viewModel.recordingError.collectAsState()
+
+                var recordingSeconds by remember { mutableIntStateOf(0) }
+                LaunchedEffect(isRecording) {
+                    if (isRecording) {
+                        recordingSeconds = 0
+                        while (true) {
+                            delay(1000)
+                            recordingSeconds++
+                        }
+                    } else {
+                        recordingSeconds = 0
+                    }
+                }
+
+                LaunchedEffect(recordingError) {
+                    if (recordingError != null) {
+                        delay(3000)
+                        viewModel.clearRecordingError()
+                    }
+                }
+
                 val previewView = remember { PreviewView(context) }
 
                 AndroidView(
@@ -225,13 +264,34 @@ fun CameraScreen(
                                 .also {
                                     it.setAnalyzer(viewModel.cameraExecutor, viewModel.imageAnalyzer)
                                 }
+
+                            viewModel.initVideoCapture()
                             cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
-                                lifecycleOwner,
-                                CameraSelector.DEFAULT_BACK_CAMERA,
-                                preview,
-                                imageAnalysis
-                            )
+
+                            val vc = viewModel.videoCapture
+                            try {
+                                val useCases = listOfNotNull(preview, imageAnalysis, vc).toTypedArray()
+                                cameraProvider.bindToLifecycle(
+                                    lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases
+                                )
+                            } catch (e: Exception) {
+                                if (vc != null) {
+                                    viewModel.setVideoUnavailable()
+                                    try {
+                                        cameraProvider.bindToLifecycle(
+                                            lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA,
+                                            preview, imageAnalysis
+                                        )
+                                    } catch (e2: Exception) {
+                                        viewModel.onCameraError("Kamera tidak dapat dibuka: ${e2.message}")
+                                        return@addListener
+                                    }
+                                } else {
+                                    viewModel.onCameraError("Kamera tidak dapat dibuka: ${e.message}")
+                                    return@addListener
+                                }
+                            }
+
                             viewModel.initCalibration(context.applicationContext)
                         } catch (e: Exception) {
                             viewModel.onCameraError("Kamera tidak dapat dibuka: ${e.message}")
@@ -276,14 +336,49 @@ fun CameraScreen(
                     )
                 }
 
-                Button(
-                    onClick = onBack,
+                recordingError?.let { error ->
+                    Text(
+                        text = "⚠ $error",
+                        color = Color.Yellow,
+                        fontSize = 11.sp,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 72.dp)
+                    )
+                }
+
+                Row(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = ActionBtnBg)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("← Kembali", color = Color.White, fontSize = 12.sp)
+                    Button(
+                        onClick = onBack,
+                        colors = ButtonDefaults.buttonColors(containerColor = ActionBtnBg)
+                    ) {
+                        Text("← Kembali", color = Color.White, fontSize = 12.sp)
+                    }
+
+                    if (isVideoAvailable) {
+                        val timerText = "%02d:%02d".format(recordingSeconds / 60, recordingSeconds % 60)
+                        Button(
+                            onClick = {
+                                if (isRecording) viewModel.stopRecording()
+                                else viewModel.startRecording(context, audioGranted)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isRecording) Color.Red else ActionBtnBg
+                            )
+                        ) {
+                            Text(
+                                text = if (isRecording) "⏹ Stop $timerText" else "⏺ Rekam",
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
             }
         }

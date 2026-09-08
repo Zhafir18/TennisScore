@@ -41,6 +41,7 @@ camerax-core     = { group = "androidx.camera", name = "camera-core",     versio
 camerax-camera2  = { group = "androidx.camera", name = "camera-camera2",  version.ref = "camerax" }
 camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 camerax-view     = { group = "androidx.camera", name = "camera-view",     version.ref = "camerax" }
+camerax-video    = { group = "androidx.camera", name = "camera-video",    version.ref = "camerax" }
 mockk            = { group = "io.mockk",        name = "mockk",           version.ref = "mockk"   }
 tflite-task-vision = { group = "org.tensorflow", name = "tensorflow-lite-task-vision", version.ref = "tflite-task-vision" }
 opencv           = { group = "org.opencv",       name = "opencv",          version.ref = "opencv"  }

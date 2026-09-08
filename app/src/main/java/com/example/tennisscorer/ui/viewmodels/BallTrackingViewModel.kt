@@ -22,6 +22,15 @@ import com.example.tennisscorer.tracking.HomographyResult
 import com.example.tennisscorer.tracking.ImageAnalyzer
 import com.example.tennisscorer.tracking.KalmanTracker
 import com.example.tennisscorer.tracking.TrackedBall
+import android.content.ContentValues
+import android.provider.MediaStore
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -67,6 +76,20 @@ class BallTrackingViewModel(
 
     private val _bounceCount = MutableStateFlow(0)
     val bounceCount: StateFlow<Int> = _bounceCount.asStateFlow()
+
+    private val _isRecording = MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
+
+    private val _recordingError = MutableStateFlow<String?>(null)
+    val recordingError: StateFlow<String?> = _recordingError.asStateFlow()
+
+    private val _isVideoAvailable = MutableStateFlow(false)
+    val isVideoAvailable: StateFlow<Boolean> = _isVideoAvailable.asStateFlow()
+
+    private var _videoCapture: VideoCapture<Recorder>? = null
+    val videoCapture: VideoCapture<Recorder>? get() = _videoCapture
+
+    private var activeRecording: Recording? = null
 
     val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     val imageAnalyzer: ImageAnalyzer = ImageAnalyzer()
@@ -159,6 +182,56 @@ class BallTrackingViewModel(
         _trackedBall.value = null
     }
 
+    fun initVideoCapture() {
+        if (_videoCapture != null) return
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+            .build()
+        _videoCapture = VideoCapture.withOutput(recorder)
+        _isVideoAvailable.value = true
+    }
+
+    fun setVideoUnavailable() {
+        _videoCapture = null
+        _isVideoAvailable.value = false
+    }
+
+    fun startRecording(context: Context, audioGranted: Boolean) {
+        val recorder = _videoCapture?.output ?: return
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Video.Media.DISPLAY_NAME, "Tennis_${System.currentTimeMillis()}.mp4")
+            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/TennisScorer")
+        }
+        val outputOptions = MediaStoreOutputOptions.Builder(
+            context.contentResolver,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        ).setContentValues(contentValues).build()
+
+        val pending = recorder.prepareRecording(context, outputOptions)
+        if (audioGranted) pending.withAudioEnabled()
+        activeRecording = pending.start(cameraExecutor) { event ->
+            when (event) {
+                is VideoRecordEvent.Start -> _isRecording.value = true
+                is VideoRecordEvent.Finalize -> {
+                    _isRecording.value = false
+                    if (event.hasError()) _recordingError.value = "Rekaman gagal disimpan"
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun stopRecording() {
+        activeRecording?.stop()
+        activeRecording = null
+        _isRecording.value = false
+    }
+
+    fun clearRecordingError() {
+        _recordingError.value = null
+    }
+
     fun initCalibration(context: Context) {
         if (_calibrationState.value != CalibrationState.Uncalibrated) return
         val appContext = context.applicationContext
@@ -177,6 +250,7 @@ class BallTrackingViewModel(
     }
 
     override fun onCleared() {
+        activeRecording?.stop()
         backgroundScope.cancel()
         cameraExecutor.shutdown()
         courtDetector?.close()

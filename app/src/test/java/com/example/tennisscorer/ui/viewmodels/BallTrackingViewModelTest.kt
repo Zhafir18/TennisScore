@@ -113,4 +113,21 @@ class BallTrackingViewModelTest {
         vm.processBallUpdate(detection)
         verify(exactly = 0) { mockEngine.pointWonBy(any()) }
     }
+
+    @Test fun `isRecording starts false`() {
+        assertFalse(vm.isRecording.value)
+    }
+
+    @Test fun `recordingError starts null`() {
+        assertNull(vm.recordingError.value)
+    }
+
+    @Test fun `isVideoAvailable starts false`() {
+        assertFalse(vm.isVideoAvailable.value)
+    }
+
+    @Test fun `stopRecording when not recording does not crash`() {
+        vm.stopRecording()
+        assertFalse(vm.isRecording.value)
+    }
 }

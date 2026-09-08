@@ -12,8 +12,11 @@ import com.example.tennisscorer.data.MatchRecord
 import com.example.tennisscorer.data.MatchRepository
 import com.example.tennisscorer.data.PointEvent
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -21,6 +24,9 @@ class TennisScoreEngine(private val repository: MatchRepository) : ViewModel() {
 
     private val _scoreState = MutableStateFlow(TennisScoreState())
     val scoreState: StateFlow<TennisScoreState> = _scoreState.asStateFlow()
+
+    private val _matchSavedEvent = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    val matchSavedEvent: SharedFlow<Long> = _matchSavedEvent.asSharedFlow()
 
     var p1NameInput by mutableStateOf("")
         private set
@@ -42,7 +48,7 @@ class TennisScoreEngine(private val repository: MatchRepository) : ViewModel() {
         val snapshot = pendingEvents.toList()
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.saveMatch(
+                val savedId = repository.saveMatch(
                     MatchRecord(
                         p1Name = finalState.p1Name,
                         p2Name = finalState.p2Name,
@@ -53,6 +59,7 @@ class TennisScoreEngine(private val repository: MatchRepository) : ViewModel() {
                     ),
                     snapshot
                 )
+                _matchSavedEvent.emit(savedId)
             }.onFailure { android.util.Log.e("TennisScorer", "persistMatch failed", it) }
         }
     }

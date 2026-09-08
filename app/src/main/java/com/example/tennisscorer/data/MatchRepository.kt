@@ -4,9 +4,10 @@ import kotlinx.coroutines.flow.Flow
 
 class MatchRepository(private val dao: MatchDao) {
 
-    suspend fun saveMatch(record: MatchRecord, events: List<PointEvent>) {
+    suspend fun saveMatch(record: MatchRecord, events: List<PointEvent>): Long {
         val matchId = dao.insertMatch(record)
         dao.insertEvents(events.map { it.copy(matchId = matchId) })
+        return matchId
     }
 
     fun getAllMatches(): Flow<List<MatchRecord>> = dao.getAllMatches()

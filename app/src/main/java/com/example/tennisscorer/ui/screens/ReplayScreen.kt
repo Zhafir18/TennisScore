@@ -20,7 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tennisscorer.data.BounceRepository
 import com.example.tennisscorer.data.MatchRepository
+import com.example.tennisscorer.tracking.HomographyMapper
+import com.example.tennisscorer.ui.components.CourtHeatmapView
 import com.example.tennisscorer.ui.components.ScoreBadge
 import com.example.tennisscorer.ui.components.WinnerOverlay
 import com.example.tennisscorer.ui.theme.ActionBtnBg
@@ -28,17 +31,23 @@ import com.example.tennisscorer.ui.theme.AppBg
 import com.example.tennisscorer.ui.theme.CyanAccent
 import com.example.tennisscorer.ui.theme.ScoreBlue
 import com.example.tennisscorer.ui.theme.ScoreRed
+import com.example.tennisscorer.ui.viewmodels.HeatmapViewModel
 import com.example.tennisscorer.ui.viewmodels.ReplayViewModel
 
 @Composable
 fun ReplayScreen(
     matchId: Long,
     repository: MatchRepository,
+    bounceRepo: BounceRepository,
     onBack: () -> Unit
 ) {
     val vm: ReplayViewModel = viewModel(
         key = "replay_$matchId",
         factory = ReplayViewModel.Factory(repository, matchId)
+    )
+    val heatmapVm: HeatmapViewModel = viewModel(
+        key = "heatmap_$matchId",
+        factory = HeatmapViewModel.Factory(bounceRepo, matchId)
     )
 
     val state by vm.replayState.collectAsState()
@@ -49,6 +58,8 @@ fun ReplayScreen(
     val record by vm.matchRecord.collectAsState()
     val loadError by vm.loadError.collectAsState()
     val isEmpty by vm.isEmpty.collectAsState()
+    val heatmapBitmap by heatmapVm.heatmapBitmap.collectAsState()
+    val heatmapCount by heatmapVm.bounceCount.collectAsState()
 
     if (loadError) {
         Box(modifier = Modifier.fillMaxSize().background(AppBg), contentAlignment = Alignment.Center) {
@@ -76,125 +87,173 @@ fun ReplayScreen(
         return
     }
 
-    val totalGames = state.p1Games + state.p2Games + state.p1Sets + state.p2Sets
-    val isSwapped = (totalGames % 2 != 0)
+    var selectedTab by remember { mutableIntStateOf(0) }
 
-    val leftName  = if (!isSwapped) state.p1Name        else state.p2Name
-    val leftScore = if (!isSwapped) state.p1DisplayScore else state.p2DisplayScore
-    val leftBg    = if (!isSwapped) ScoreRed             else ScoreBlue
-
-    val rightName  = if (!isSwapped) state.p2Name        else state.p1Name
-    val rightScore = if (!isSwapped) state.p2DisplayScore else state.p1DisplayScore
-    val rightBg    = if (!isSwapped) ScoreBlue            else ScoreRed
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier.weight(1f).fillMaxHeight().background(leftBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(leftName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Spacer(Modifier.height(8.dp))
-                    AnimatedContent(
-                        targetState = leftScore,
-                        transitionSpec = {
-                            (slideInVertically(tween(200)) { -it } + fadeIn(tween(200)))
-                                .togetherWith(slideOutVertically(tween(200)) { it } + fadeOut(tween(200)))
-                                .using(SizeTransform(clip = false))
-                        },
-                        label = "replayLeft"
-                    ) { score ->
-                        Text(score, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                    }
-                }
-            }
-
-            Box(
-                modifier = Modifier.weight(1f).fillMaxHeight().background(rightBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(rightName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Spacer(Modifier.height(8.dp))
-                    AnimatedContent(
-                        targetState = rightScore,
-                        transitionSpec = {
-                            (slideInVertically(tween(200)) { -it } + fadeIn(tween(200)))
-                                .togetherWith(slideOutVertically(tween(200)) { it } + fadeOut(tween(200)))
-                                .using(SizeTransform(clip = false))
-                        },
-                        label = "replayRight"
-                    ) { score ->
-                        Text(score, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                    }
-                }
-            }
-        }
-
-        ScoreBadge(
-            p1Sets = state.p1Sets,
-            p2Sets = state.p2Sets,
-            p1Games = state.p1Games,
-            p2Games = state.p2Games,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp)
-        )
-
-        // Top banner
-        Text(
-            text = "⏪ Replay — ${record?.p1Name ?: ""} vs ${record?.p2Name ?: ""}",
-            fontSize = 11.sp,
-            color = CyanAccent,
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 4.dp)
-        )
-
-        // Bottom control bar
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Column(modifier = Modifier.fillMaxSize().background(AppBg)) {
+        TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = Color.Black,
+            contentColor = CyanAccent
         ) {
-            Button(
-                onClick = onBack,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ActionBtnBg)
-            ) {
-                Text("← Kembali", fontSize = 12.sp, color = Color.White)
-            }
-
-            Button(
-                onClick = { vm.togglePlayPause() },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = CyanAccent),
-                enabled = !isFinished
-            ) {
-                Text(if (isPlaying) "⏸ Pause" else "▶ Play", fontSize = 12.sp, color = Color.White)
-            }
-
-            listOf(0.5f to "0.5×", 1.0f to "1×", 2.0f to "2×").forEach { (value, label) ->
-                FilterChip(
-                    selected = speed == value,
-                    onClick = { vm.setSpeed(value) },
-                    label = { Text(label, fontSize = 11.sp) }
-                )
-            }
-
-            if (progress.second > 0) {
-                Text(
-                    text = "Poin ${progress.first} / ${progress.second}",
-                    fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.7f)
-                )
-            }
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("Replay", fontSize = 13.sp) }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text("Heatmap", fontSize = 13.sp) }
+            )
         }
 
-        if (isFinished) {
-            WinnerOverlay(
-                winnerName = state.winnerName ?: record?.winnerName ?: "",
-                onPlayAgain = onBack
-            )
+        when (selectedTab) {
+            0 -> {
+                val totalGames = state.p1Games + state.p2Games + state.p1Sets + state.p2Sets
+                val isSwapped = (totalGames % 2 != 0)
+
+                val leftName  = if (!isSwapped) state.p1Name        else state.p2Name
+                val leftScore = if (!isSwapped) state.p1DisplayScore else state.p2DisplayScore
+                val leftBg    = if (!isSwapped) ScoreRed             else ScoreBlue
+
+                val rightName  = if (!isSwapped) state.p2Name        else state.p1Name
+                val rightScore = if (!isSwapped) state.p2DisplayScore else state.p1DisplayScore
+                val rightBg    = if (!isSwapped) ScoreBlue            else ScoreRed
+
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        Box(
+                            modifier = Modifier.weight(1f).fillMaxHeight().background(leftBg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(leftName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Spacer(Modifier.height(8.dp))
+                                AnimatedContent(
+                                    targetState = leftScore,
+                                    transitionSpec = {
+                                        (slideInVertically(tween(200)) { -it } + fadeIn(tween(200)))
+                                            .togetherWith(slideOutVertically(tween(200)) { it } + fadeOut(tween(200)))
+                                            .using(SizeTransform(clip = false))
+                                    },
+                                    label = "replayLeft"
+                                ) { score ->
+                                    Text(score, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                                }
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.weight(1f).fillMaxHeight().background(rightBg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(rightName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Spacer(Modifier.height(8.dp))
+                                AnimatedContent(
+                                    targetState = rightScore,
+                                    transitionSpec = {
+                                        (slideInVertically(tween(200)) { -it } + fadeIn(tween(200)))
+                                            .togetherWith(slideOutVertically(tween(200)) { it } + fadeOut(tween(200)))
+                                            .using(SizeTransform(clip = false))
+                                    },
+                                    label = "replayRight"
+                                ) { score ->
+                                    Text(score, fontSize = 100.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                                }
+                            }
+                        }
+                    }
+
+                    ScoreBadge(
+                        p1Sets = state.p1Sets,
+                        p2Sets = state.p2Sets,
+                        p1Games = state.p1Games,
+                        p2Games = state.p2Games,
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp)
+                    )
+
+                    Text(
+                        text = "⏪ Replay — ${record?.p1Name ?: ""} vs ${record?.p2Name ?: ""}",
+                        fontSize = 11.sp,
+                        color = CyanAccent,
+                        modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 4.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = onBack,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = ActionBtnBg)
+                        ) {
+                            Text("← Kembali", fontSize = 12.sp, color = Color.White)
+                        }
+
+                        Button(
+                            onClick = { vm.togglePlayPause() },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = CyanAccent),
+                            enabled = !isFinished
+                        ) {
+                            Text(if (isPlaying) "⏸ Pause" else "▶ Play", fontSize = 12.sp, color = Color.White)
+                        }
+
+                        listOf(0.5f to "0.5×", 1.0f to "1×", 2.0f to "2×").forEach { (value, label) ->
+                            FilterChip(
+                                selected = speed == value,
+                                onClick = { vm.setSpeed(value) },
+                                label = { Text(label, fontSize = 11.sp) }
+                            )
+                        }
+
+                        if (progress.second > 0) {
+                            Text(
+                                text = "Poin ${progress.first} / ${progress.second}",
+                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+
+                    if (isFinished) {
+                        WinnerOverlay(
+                            winnerName = state.winnerName ?: record?.winnerName ?: "",
+                            onPlayAgain = onBack
+                        )
+                    }
+                }
+            }
+
+            1 -> {
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (heatmapCount == 0) {
+                        Text(
+                            "Belum ada data bounce",
+                            color = Color.White.copy(alpha = 0.5f),
+                            fontSize = 14.sp
+                        )
+                    } else {
+                        CourtHeatmapView(
+                            heatmapBitmap = heatmapBitmap,
+                            bounceCount = heatmapCount,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .aspectRatio(
+                                    HomographyMapper.COURT_WIDTH_M / HomographyMapper.COURT_LENGTH_M
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 }

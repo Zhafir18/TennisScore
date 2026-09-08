@@ -1,14 +1,16 @@
 package com.example.tennisscorer.ui.viewmodels
 
 import android.content.Context
-import android.graphics.PointF
 import android.graphics.RectF
 import com.example.tennisscorer.TennisScoreEngine
+import com.example.tennisscorer.data.BounceRepository
 import com.example.tennisscorer.tracking.BounceEvent
 import com.example.tennisscorer.tracking.CalibrationState
 import com.example.tennisscorer.tracking.Detection
-import com.example.tennisscorer.tracking.TrackedBall
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.flow.MutableSharedFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -19,8 +21,11 @@ import org.junit.Test
 
 class BallTrackingViewModelTest {
 
-    private val mockEngine = mockk<TennisScoreEngine>(relaxed = true)
-    private val vm = BallTrackingViewModel(mockEngine)
+    private val mockEngine = mockk<TennisScoreEngine>(relaxed = true) {
+        every { matchSavedEvent } returns MutableSharedFlow()
+    }
+    private val mockBounceRepo = mockk<BounceRepository>(relaxed = true)
+    private val vm = BallTrackingViewModel(mockEngine, mockBounceRepo)
 
     @After fun tearDown() { vm.cameraExecutor.shutdown() }
 
@@ -82,31 +87,28 @@ class BallTrackingViewModelTest {
         assertNull(vm.trackedBall.value)
     }
 
-    // --- Task 2 new tests ---
+    @Test fun `heatmapBitmap starts null`() {
+        assertNull(vm.heatmapBitmap.value)
+    }
+
+    @Test fun `bounceCount starts 0`() {
+        assertEquals(0, vm.bounceCount.value)
+    }
 
     @Test fun `handleBounceEvent PointAwarded calls engine pointWonBy and nulls trackedBall`() {
-        val courtPos = PointF().also { it.x = 5f; it.y = 3f }
+        val courtPos = android.graphics.PointF(5f, 3f)
         vm.handleBounceEvent(BounceEvent.PointAwarded(winner = 2, isOut = false, courtPos = courtPos))
         verify { mockEngine.pointWonBy(2) }
         assertNull(vm.trackedBall.value)
     }
 
     @Test fun `bounce without calibration does not call pointWonBy`() {
-        // calibrationState = Uncalibrated (default) → mapper=null → courtPos=null
-        // → bounceDetector.process(vy, null, ...) returns null → engine never called
-        // Send 20 identical detections — vy stays near 0, courtPos=null regardless
         repeat(20) { vm.processBallUpdate(null) }
         verify(exactly = 0) { mockEngine.pointWonBy(any()) }
     }
 
     @Test fun `real detection without calibration does not call pointWonBy`() {
-        // Supplies real Detection objects (not null) so KalmanTracker produces isPredicted=false,
-        // but calibrationState=Uncalibrated (default) → mapper=null → courtPos=null.
-        // This exercises the courtPos=null code path in processBallUpdate on real detections.
-        val detection = Detection(
-            boundingBox = RectF(0.1f, 0.1f, 0.2f, 0.2f),
-            confidence = 0.9f
-        )
+        val detection = Detection(boundingBox = RectF(0.1f, 0.1f, 0.2f, 0.2f), confidence = 0.9f)
         vm.processBallUpdate(detection)
         vm.processBallUpdate(detection)
         verify(exactly = 0) { mockEngine.pointWonBy(any()) }

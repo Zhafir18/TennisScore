@@ -1,36 +1,46 @@
 package com.example.tennisscorer.ui.viewmodels
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.PointF
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.tennisscorer.TennisScoreEngine
+import com.example.tennisscorer.data.BounceRecord
+import com.example.tennisscorer.data.BounceRepository
 import com.example.tennisscorer.tracking.BallDetector
 import com.example.tennisscorer.tracking.BounceDetector
 import com.example.tennisscorer.tracking.BounceEvent
 import com.example.tennisscorer.tracking.CalibrationState
 import com.example.tennisscorer.tracking.CourtDetector
 import com.example.tennisscorer.tracking.Detection
-import com.example.tennisscorer.tracking.FrameAnalyzer
+import com.example.tennisscorer.tracking.HeatmapRenderer
 import com.example.tennisscorer.tracking.HomographyMapper
 import com.example.tennisscorer.tracking.HomographyResult
 import com.example.tennisscorer.tracking.ImageAnalyzer
 import com.example.tennisscorer.tracking.KalmanTracker
 import com.example.tennisscorer.tracking.TrackedBall
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class BallTrackingViewModel(
-    private val engine: TennisScoreEngine
+    private val engine: TennisScoreEngine,
+    private val bounceRepo: BounceRepository
 ) : ViewModel() {
 
     companion object {
-        fun factory(engine: TennisScoreEngine): ViewModelProvider.Factory = viewModelFactory {
-            initializer { BallTrackingViewModel(engine) }
+        fun factory(engine: TennisScoreEngine, bounceRepo: BounceRepository): ViewModelProvider.Factory = viewModelFactory {
+            initializer { BallTrackingViewModel(engine, bounceRepo) }
         }
     }
 
@@ -52,6 +62,12 @@ class BallTrackingViewModel(
     private val _trackedBall = MutableStateFlow<TrackedBall?>(null)
     val trackedBall: StateFlow<TrackedBall?> = _trackedBall.asStateFlow()
 
+    private val _heatmapBitmap = MutableStateFlow<Bitmap?>(null)
+    val heatmapBitmap: StateFlow<Bitmap?> = _heatmapBitmap.asStateFlow()
+
+    private val _bounceCount = MutableStateFlow(0)
+    val bounceCount: StateFlow<Int> = _bounceCount.asStateFlow()
+
     val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     val imageAnalyzer: ImageAnalyzer = ImageAnalyzer()
 
@@ -59,6 +75,22 @@ class BallTrackingViewModel(
     private val bounceDetector = BounceDetector()
     private var ballDetector: BallDetector? = null
     private var courtDetector: CourtDetector? = null
+
+    private val bouncePoints = mutableListOf<PointF>()
+    private val pendingBounces = mutableListOf<BounceRecord>()
+
+    // Use a dedicated scope to avoid requiring Dispatchers.Main in unit tests
+    private val backgroundScope = CoroutineScope(SupervisorJob())
+
+    init {
+        backgroundScope.launch {
+            engine.matchSavedEvent.collect { matchId ->
+                val toSave = pendingBounces.map { it.copy(matchId = matchId) }
+                pendingBounces.clear()
+                launch(Dispatchers.IO) { toSave.forEach { bounceRepo.insert(it) } }
+            }
+        }
+    }
 
     fun onPermissionResult(granted: Boolean) {
         _permissionGranted.value = granted
@@ -68,7 +100,7 @@ class BallTrackingViewModel(
         _cameraError.value = message
     }
 
-    fun setFrameAnalyzer(analyzer: FrameAnalyzer) {
+    fun setFrameAnalyzer(analyzer: com.example.tennisscorer.tracking.FrameAnalyzer?) {
         imageAnalyzer.setFrameAnalyzer(analyzer)
     }
 
@@ -77,21 +109,30 @@ class BallTrackingViewModel(
     }
 
     internal fun processBallUpdate(detection: Detection?) {
-        val trackedBall = kalmanTracker.update(detection)
-        _trackedBall.value = trackedBall
-        if (trackedBall != null) {
+        val tracked = kalmanTracker.update(detection)
+        _trackedBall.value = tracked
+        if (tracked != null) {
             val mapper = (_calibrationState.value as? CalibrationState.Calibrated)?.mapper
-            val courtPos = mapper?.mapToCourtCoords(trackedBall.position)
-            val event = bounceDetector.process(trackedBall.velocity.y, courtPos, trackedBall.isPredicted)
-            if (event is BounceEvent.PointAwarded) {
-                handleBounceEvent(event)
-            }
+            val courtPos = mapper?.mapToCourtCoords(tracked.position)
+            val event = bounceDetector.process(tracked.velocity.y, courtPos, tracked.isPredicted)
+            if (event is BounceEvent.PointAwarded) handleBounceEvent(event)
         }
     }
 
     internal fun handleBounceEvent(event: BounceEvent) {
         if (event is BounceEvent.PointAwarded) {
             engine.pointWonBy(event.winner)
+
+            bouncePoints.add(event.courtPos)
+            pendingBounces.add(
+                BounceRecord(matchId = 0, x = event.courtPos.x, y = event.courtPos.y, player = event.winner)
+            )
+            val snapshot = bouncePoints.toList()
+            backgroundScope.launch(Dispatchers.Default) {
+                _heatmapBitmap.value = HeatmapRenderer.render(snapshot)
+                _bounceCount.value = snapshot.size
+            }
+
             kalmanTracker.reset()
             bounceDetector.reset()
             _trackedBall.value = null
@@ -136,6 +177,7 @@ class BallTrackingViewModel(
     }
 
     override fun onCleared() {
+        backgroundScope.cancel()
         cameraExecutor.shutdown()
         courtDetector?.close()
         ballDetector?.close()

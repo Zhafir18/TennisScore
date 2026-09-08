@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.tennisscorer.TennisScoreEngine
+import com.example.tennisscorer.data.BounceRepository
 import com.example.tennisscorer.data.MatchRepository
 import com.example.tennisscorer.ui.screens.CameraScreen
 import com.example.tennisscorer.ui.screens.HistoryScreen
@@ -22,7 +23,7 @@ import com.example.tennisscorer.ui.screens.ScoreboardScreen
 import com.example.tennisscorer.ui.screens.SplashScreen
 
 @Composable
-fun AppNavigation(engine: TennisScoreEngine, repository: MatchRepository) {
+fun AppNavigation(engine: TennisScoreEngine, repository: MatchRepository, bounceRepo: BounceRepository) {
     LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
     val navController = rememberNavController()
     NavHost(
@@ -68,11 +69,12 @@ fun AppNavigation(engine: TennisScoreEngine, repository: MatchRepository) {
             ReplayScreen(
                 matchId    = matchId,
                 repository = repository,
+                bounceRepo = bounceRepo,
                 onBack     = { navController.popBackStack() }
             )
         }
         composable(Screen.BallTracking.route) {
-            CameraScreen(engine = engine, onBack = { navController.popBackStack() })
+            CameraScreen(engine = engine, bounceRepo = bounceRepo, onBack = { navController.popBackStack() })
         }
     }
 }

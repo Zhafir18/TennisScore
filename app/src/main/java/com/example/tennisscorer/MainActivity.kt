@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.tennisscorer.data.BounceRepository
 import com.example.tennisscorer.data.MatchRepository
 import com.example.tennisscorer.data.TennisScorerDatabase
 import com.example.tennisscorer.navigation.AppNavigation
@@ -16,6 +17,7 @@ import org.opencv.android.OpenCVLoader
 class MainActivity : ComponentActivity() {
     private val db by lazy { TennisScorerDatabase.getInstance(applicationContext) }
     private val repository by lazy { MatchRepository(db.matchDao()) }
+    private val bounceRepository by lazy { BounceRepository(db.bounceDao()) }
     private val engine: TennisScoreEngine by viewModels { TennisScoreEngine.Factory(repository) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +30,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             TennisScorerTheme {
-                AppNavigation(engine = engine, repository = repository)
+                AppNavigation(engine = engine, repository = repository, bounceRepo = bounceRepository)
             }
         }
     }

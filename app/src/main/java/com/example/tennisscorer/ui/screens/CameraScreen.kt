@@ -12,11 +12,14 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -31,8 +34,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tennisscorer.TennisScoreEngine
+import com.example.tennisscorer.data.BounceRepository
 import com.example.tennisscorer.tracking.CalibrationState
-import com.example.tennisscorer.tracking.TrackedBall
+import com.example.tennisscorer.ui.components.CourtHeatmapView
 import com.example.tennisscorer.ui.theme.ActionBtnBg
 import com.example.tennisscorer.ui.theme.CyanAccent
 import com.example.tennisscorer.ui.viewmodels.BallTrackingViewModel
@@ -40,7 +44,8 @@ import com.example.tennisscorer.ui.viewmodels.BallTrackingViewModel
 @Composable
 fun CameraScreen(
     engine: TennisScoreEngine,
-    viewModel: BallTrackingViewModel = viewModel(factory = BallTrackingViewModel.factory(engine)),
+    bounceRepo: BounceRepository,
+    viewModel: BallTrackingViewModel = viewModel(factory = BallTrackingViewModel.factory(engine, bounceRepo)),
     onBack: () -> Unit
 ) {
     val permissionGranted by viewModel.permissionGranted.collectAsState()
@@ -117,6 +122,8 @@ fun CameraScreen(
                 val calibrationState by viewModel.calibrationState.collectAsState()
                 val trackedBall by viewModel.trackedBall.collectAsState()
                 val ballDetectorError by viewModel.ballDetectorError.collectAsState()
+                val heatmapBitmap by viewModel.heatmapBitmap.collectAsState()
+                val bounceCount by viewModel.bounceCount.collectAsState()
                 val previewView = remember { PreviewView(context) }
 
                 AndroidView(
@@ -249,6 +256,23 @@ fun CameraScreen(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(8.dp)
+                    )
+                }
+
+                // Mini-map heatmap — pojok kanan bawah
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = 72.dp)
+                        .size(width = 120.dp, height = 260.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .border(1.dp, CyanAccent, RoundedCornerShape(8.dp))
+                ) {
+                    CourtHeatmapView(
+                        heatmapBitmap = heatmapBitmap,
+                        bounceCount = bounceCount,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 

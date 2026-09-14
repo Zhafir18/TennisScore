@@ -8,7 +8,8 @@ class YoloV8DetectorTest {
 
     private fun makeOutput(anchors: List<FloatArray>): Array<FloatArray> {
         // anchors: list of [cx, cy, w, h, conf] in 640-pixel space
-        val out = Array(5) { FloatArray(8400) }
+        // conf placed at feature index 4 (class 0 = 'Tennis-ball')
+        val out = Array(21) { FloatArray(8400) }
         anchors.forEachIndexed { i, v ->
             out[0][i] = v[0]; out[1][i] = v[1]
             out[2][i] = v[2]; out[3][i] = v[3]

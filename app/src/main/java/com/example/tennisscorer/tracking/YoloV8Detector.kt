@@ -27,7 +27,7 @@ class YoloV8Detector(
         image.close()
         val scaled = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, true)
         val inputBuffer = bitmapToByteBuffer(scaled)
-        val output = Array(1) { Array(5) { FloatArray(NUM_ANCHORS) } }
+        val output = Array(1) { Array(NUM_FEATURES) { FloatArray(NUM_ANCHORS) } }
         interpreter.run(inputBuffer, output)
         onDetections(parseOutput(output[0]))
     }
@@ -54,6 +54,11 @@ class YoloV8Detector(
         const val IOU_THRESHOLD  = 0.45f
         const val INPUT_SIZE     = 640
         const val NUM_ANCHORS    = 8400
+        const val NUM_FEATURES   = 21  // 4 box coords + 17 classes
+
+        // Dataset has 3 duplicate tennis-ball class names at indices 0, 14, 16
+        // Feature index = 4 + class_index
+        private val BALL_FEATURE_INDICES = intArrayOf(4, 18, 20)
 
         fun parseOutput(
             output: Array<FloatArray>,
@@ -62,7 +67,7 @@ class YoloV8Detector(
         ): List<Detection> {
             val candidates = mutableListOf<Pair<RectF, Float>>()
             for (i in 0 until NUM_ANCHORS) {
-                val conf = output[4][i]
+                val conf = BALL_FEATURE_INDICES.maxOf { fi -> output[fi][i] }
                 if (conf < confThreshold) continue
                 val cx = output[0][i]; val cy = output[1][i]
                 val w  = output[2][i]; val h  = output[3][i]

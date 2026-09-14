@@ -10,7 +10,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.tennisscorer.TennisScoreEngine
 import com.example.tennisscorer.data.BounceRecord
 import com.example.tennisscorer.data.BounceRepository
-import com.example.tennisscorer.tracking.BallDetector
+import com.example.tennisscorer.tracking.YoloV8Detector
 import com.example.tennisscorer.tracking.BounceDetector
 import com.example.tennisscorer.tracking.BounceEvent
 import com.example.tennisscorer.tracking.CalibrationState
@@ -96,7 +96,7 @@ class BallTrackingViewModel(
 
     private val kalmanTracker = KalmanTracker()
     private val bounceDetector = BounceDetector()
-    private var ballDetector: BallDetector? = null
+    private var ballDetector: YoloV8Detector? = null
     private var courtDetector: CourtDetector? = null
 
     private val bouncePoints = mutableListOf<PointF>()
@@ -165,7 +165,7 @@ class BallTrackingViewModel(
     fun initDetector(context: Context) {
         if (ballDetector != null) return
         try {
-            val detector = BallDetector(context.applicationContext) { detections ->
+            val detector = YoloV8Detector(context.applicationContext) { detections ->
                 _detections.value = detections
                 processBallUpdate(detections.firstOrNull())
             }

@@ -64,7 +64,10 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.camerax.video)
-    implementation(libs.tflite.task.vision)
+    implementation(libs.tflite) {
+        exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
+    }
+    compileOnly("org.tensorflow:tensorflow-lite-api:2.14.0")
     implementation(libs.opencv)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

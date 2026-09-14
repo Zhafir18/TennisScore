@@ -13,7 +13,7 @@ ksp = "2.2.10-2.0.2"
 room = "2.7.1"
 camerax = "1.4.1"
 mockk   = "1.13.8"
-tflite-task-vision = "0.4.4"
+tflite = "2.14.0"
 opencv = "4.10.0"
 
 [libraries]
@@ -43,7 +43,7 @@ camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", vers
 camerax-view     = { group = "androidx.camera", name = "camera-view",     version.ref = "camerax" }
 camerax-video    = { group = "androidx.camera", name = "camera-video",    version.ref = "camerax" }
 mockk            = { group = "io.mockk",        name = "mockk",           version.ref = "mockk"   }
-tflite-task-vision = { group = "org.tensorflow", name = "tensorflow-lite-task-vision", version.ref = "tflite-task-vision" }
+tflite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tflite" }
 opencv           = { group = "org.opencv",       name = "opencv",          version.ref = "opencv"  }
 
 [plugins]

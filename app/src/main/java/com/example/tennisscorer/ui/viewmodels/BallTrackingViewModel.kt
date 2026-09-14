@@ -304,6 +304,8 @@ class BallTrackingViewModel(
         }
         if (matrix != null) {
             _calibrationState.value = CalibrationState.Calibrated(HomographyMapper(matrix))
+            courtDetector?.close()
+            courtDetector = null
             savedAppContext?.let { initDetector(it) }
         } else {
             _calibrationState.value = CalibrationState.Failed("Kalibrasi manual gagal")

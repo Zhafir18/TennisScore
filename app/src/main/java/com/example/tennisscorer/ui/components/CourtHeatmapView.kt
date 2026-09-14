@@ -71,7 +71,7 @@ fun CourtHeatmapView(
                 val by = (pos.y / HomographyMapper.COURT_LENGTH_M) * size.height
                 if (bx in 0f..size.width && by in 0f..size.height) {
                     drawCircle(
-                        color = Color(0xFF00FFFF),
+                        color = Color.Cyan,
                         radius = 4.dp.toPx(),
                         center = Offset(bx, by)
                     )

@@ -174,6 +174,7 @@ class BallTrackingViewModel(
             kalmanTracker.reset()
             bounceDetector.reset()
             _trackedBall.value = null
+            _ballCourtPos.value = null
         }
     }
 
@@ -195,6 +196,7 @@ class BallTrackingViewModel(
         kalmanTracker.reset()
         bounceDetector.reset()
         _trackedBall.value = null
+        _ballCourtPos.value = null
     }
 
     fun initVideoCapture() {
@@ -266,6 +268,9 @@ class BallTrackingViewModel(
     }
 
     fun startManualCalibration() {
+        setFrameAnalyzer(null)
+        courtDetector?.close()
+        courtDetector = null
         _calibrationState.value = CalibrationState.ManualCalibrating()
     }
 
@@ -297,7 +302,8 @@ class BallTrackingViewModel(
             )
             H = Imgproc.getPerspectiveTransform(src, dst)
             FloatArray(9) { i -> H.get(i / 3, i % 3)[0].toFloat() }
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            android.util.Log.e("BallTrackingVM", "applyManualCalibration failed", t)
             null
         } finally {
             src?.release(); dst?.release(); H?.release()

@@ -180,4 +180,17 @@ class BallTrackingViewModelTest {
         assertTrue(state is CalibrationState.ManualCalibrating)
         assertEquals(3, (state as CalibrationState.ManualCalibrating).taps.size)
     }
+
+    @Test fun `addManualTap with 4th tap transitions out of ManualCalibrating`() {
+        vm.startManualCalibration()
+        repeat(4) { i ->
+            vm.addManualTap(android.graphics.PointF().also { it.x = i * 0.25f; it.y = 0.5f })
+        }
+        val state = vm.calibrationState.value
+        assertFalse("State should have left ManualCalibrating after 4 taps",
+            state is CalibrationState.ManualCalibrating)
+        // JVM tests have no OpenCV native → getPerspectiveTransform throws → expect Failed
+        assertTrue("State should be Failed when OpenCV unavailable in JVM tests",
+            state is CalibrationState.Failed)
+    }
 }

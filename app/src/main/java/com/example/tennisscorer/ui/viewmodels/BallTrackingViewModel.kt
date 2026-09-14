@@ -22,6 +22,10 @@ import com.example.tennisscorer.tracking.HomographyResult
 import com.example.tennisscorer.tracking.ImageAnalyzer
 import com.example.tennisscorer.tracking.KalmanTracker
 import com.example.tennisscorer.tracking.TrackedBall
+import org.opencv.core.Mat
+import org.opencv.core.MatOfPoint2f
+import org.opencv.core.Point
+import org.opencv.imgproc.Imgproc
 import android.content.ContentValues
 import android.provider.MediaStore
 import androidx.camera.video.MediaStoreOutputOptions
@@ -103,6 +107,7 @@ class BallTrackingViewModel(
     private val bounceDetector = BounceDetector()
     private var ballDetector: YoloV8Detector? = null
     private var courtDetector: CourtDetector? = null
+    private var savedAppContext: Context? = null
 
     private val bouncePoints = mutableListOf<PointF>()
     private val pendingBounces = mutableListOf<BounceRecord>()
@@ -245,6 +250,7 @@ class BallTrackingViewModel(
     fun initCalibration(context: Context) {
         if (_calibrationState.value != CalibrationState.Uncalibrated) return
         val appContext = context.applicationContext
+        savedAppContext = appContext
         _calibrationState.value = CalibrationState.Calibrating
         val detector = CourtDetector { result ->
             when (result) {
@@ -257,6 +263,61 @@ class BallTrackingViewModel(
         }
         courtDetector = detector
         setFrameAnalyzer(detector)
+    }
+
+    fun startManualCalibration() {
+        _calibrationState.value = CalibrationState.ManualCalibrating()
+    }
+
+    fun addManualTap(tap: PointF) {
+        val current = _calibrationState.value as? CalibrationState.ManualCalibrating ?: return
+        val newTaps = current.taps + tap
+        if (newTaps.size < 4) {
+            _calibrationState.value = CalibrationState.ManualCalibrating(newTaps)
+        } else {
+            applyManualCalibration(newTaps)
+        }
+    }
+
+    private fun applyManualCalibration(taps: List<PointF>) {
+        // taps[0]=nearLeft, [1]=nearRight, [2]=farLeft, [3]=farRight (normalized 0-1)
+        var src: MatOfPoint2f? = null; var dst: MatOfPoint2f? = null; var H: Mat? = null
+        val matrix = try {
+            src = MatOfPoint2f(
+                Point(taps[0].x * IMAGE_WIDTH.toDouble(), taps[0].y * IMAGE_HEIGHT.toDouble()),
+                Point(taps[1].x * IMAGE_WIDTH.toDouble(), taps[1].y * IMAGE_HEIGHT.toDouble()),
+                Point(taps[2].x * IMAGE_WIDTH.toDouble(), taps[2].y * IMAGE_HEIGHT.toDouble()),
+                Point(taps[3].x * IMAGE_WIDTH.toDouble(), taps[3].y * IMAGE_HEIGHT.toDouble())
+            )
+            dst = MatOfPoint2f(
+                Point(0.0, 0.0),
+                Point(HomographyMapper.COURT_WIDTH_M.toDouble(), 0.0),
+                Point(0.0, HomographyMapper.COURT_LENGTH_M.toDouble()),
+                Point(HomographyMapper.COURT_WIDTH_M.toDouble(), HomographyMapper.COURT_LENGTH_M.toDouble())
+            )
+            H = Imgproc.getPerspectiveTransform(src, dst)
+            FloatArray(9) { i -> H.get(i / 3, i % 3)[0].toFloat() }
+        } catch (_: Throwable) {
+            null
+        } finally {
+            src?.release(); dst?.release(); H?.release()
+        }
+        if (matrix != null) {
+            _calibrationState.value = CalibrationState.Calibrated(HomographyMapper(matrix))
+            savedAppContext?.let { initDetector(it) }
+        } else {
+            _calibrationState.value = CalibrationState.Failed("Kalibrasi manual gagal")
+        }
+    }
+
+    fun retryAutoCalibration(context: Context) {
+        setFrameAnalyzer(null)
+        courtDetector?.close()
+        courtDetector = null
+        ballDetector?.close()   // reset agar initDetector bisa re-create dan re-set analyzer
+        ballDetector = null
+        _calibrationState.value = CalibrationState.Uncalibrated
+        initCalibration(context)
     }
 
     override fun onCleared() {

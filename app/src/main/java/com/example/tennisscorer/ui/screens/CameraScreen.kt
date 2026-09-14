@@ -2,6 +2,7 @@ package com.example.tennisscorer.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.PointF
 import android.util.Size as AndroidSize
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,6 +14,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -25,6 +27,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -236,15 +239,94 @@ fun CameraScreen(
                         }
                     }
                     is CalibrationState.Failed -> {
-                        Text(
-                            text = "Kalibrasi gagal — koordinat lapangan tidak tersedia",
-                            color = Color.Yellow,
-                            fontSize = 11.sp,
+                        Column(
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(top = 8.dp, start = 16.dp, end = 16.dp),
-                            textAlign = TextAlign.Center
-                        )
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Kalibrasi gagal — koordinat lapangan tidak tersedia",
+                                color = Color.Yellow,
+                                fontSize = 11.sp,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = { viewModel.retryAutoCalibration(context) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = ActionBtnBg)
+                                ) { Text("Coba Ulang Auto", color = Color.White, fontSize = 11.sp) }
+                                Button(
+                                    onClick = { viewModel.startManualCalibration() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = CyanAccent)
+                                ) { Text("Kalibrasi Manual", color = Color.White, fontSize = 11.sp) }
+                            }
+                        }
+                    }
+                    is CalibrationState.ManualCalibrating -> {
+                        val taps = (calibrationState as CalibrationState.ManualCalibrating).taps
+                        val tapLabels = listOf("Dekat-Kiri", "Dekat-Kanan", "Jauh-Kiri", "Jauh-Kanan")
+                        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                            val maxW = constraints.maxWidth.toFloat()
+                            val maxH = constraints.maxHeight.toFloat()
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.55f))
+                                    .pointerInput(Unit) {
+                                        detectTapGestures { offset ->
+                                            viewModel.addManualTap(PointF(offset.x / maxW, offset.y / maxH))
+                                        }
+                                    }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .padding(top = 24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = if (taps.size < 4) "Sentuh sudut ${tapLabels[taps.size]}"
+                                               else "Memproses...",
+                                        color = Color.White,
+                                        fontSize = 16.sp
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = "${taps.size}/4 sudut dipilih",
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    taps.forEachIndexed { idx, tap ->
+                                        drawCircle(
+                                            color = CyanAccent,
+                                            radius = 8.dp.toPx(),
+                                            center = Offset(tap.x * size.width, tap.y * size.height)
+                                        )
+                                        drawContext.canvas.nativeCanvas.drawText(
+                                            "${idx + 1}",
+                                            tap.x * size.width + 12.dp.toPx(),
+                                            tap.y * size.height + 4.dp.toPx(),
+                                            android.graphics.Paint().apply {
+                                                color = android.graphics.Color.WHITE
+                                                textSize = 14.sp.toPx()
+                                            }
+                                        )
+                                    }
+                                }
+                                TextButton(
+                                    onClick = { viewModel.retryAutoCalibration(context) },
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(bottom = 80.dp)
+                                ) {
+                                    Text("Batal — Coba Ulang Auto", color = Color.White.copy(alpha = 0.7f))
+                                }
+                            }
+                        }
                     }
                     is CalibrationState.Calibrated -> { /* no overlay — ball detection active */ }
                 }

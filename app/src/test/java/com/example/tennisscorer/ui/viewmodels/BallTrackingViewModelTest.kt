@@ -147,4 +147,37 @@ class BallTrackingViewModelTest {
         vm.processBallUpdate(null)
         assertNull(vm.ballCourtPos.value)
     }
+
+    @Test fun `startManualCalibration transitions to ManualCalibrating with empty taps`() {
+        vm.startManualCalibration()
+        val state = vm.calibrationState.value
+        assertTrue(state is CalibrationState.ManualCalibrating)
+        assertEquals(0, (state as CalibrationState.ManualCalibrating).taps.size)
+    }
+
+    @Test fun `addManualTap accumulates taps in ManualCalibrating state`() {
+        vm.startManualCalibration()
+        val tap1 = android.graphics.PointF().also { it.x = 0.1f; it.y = 0.9f }
+        val tap2 = android.graphics.PointF().also { it.x = 0.9f; it.y = 0.9f }
+        vm.addManualTap(tap1)
+        vm.addManualTap(tap2)
+        val state = vm.calibrationState.value as? CalibrationState.ManualCalibrating
+        assertNotNull(state)
+        assertEquals(2, state!!.taps.size)
+        assertEquals(0.1f, state.taps[0].x, 0.001f)
+        assertEquals(0.9f, state.taps[1].x, 0.001f)
+    }
+
+    @Test fun `addManualTap does nothing when not in ManualCalibrating state`() {
+        vm.addManualTap(android.graphics.PointF(0.5f, 0.5f))
+        assertTrue(vm.calibrationState.value is CalibrationState.Uncalibrated)
+    }
+
+    @Test fun `addManualTap with 3 taps stays in ManualCalibrating`() {
+        vm.startManualCalibration()
+        repeat(3) { i -> vm.addManualTap(android.graphics.PointF(i * 0.3f, i * 0.3f)) }
+        val state = vm.calibrationState.value
+        assertTrue(state is CalibrationState.ManualCalibrating)
+        assertEquals(3, (state as CalibrationState.ManualCalibrating).taps.size)
+    }
 }

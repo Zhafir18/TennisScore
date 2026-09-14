@@ -20,10 +20,11 @@ class CourtDetector(
         private const val CANNY_LOW = 50.0
         private const val CANNY_HIGH = 150.0
         private const val HOUGH_THRESHOLD = 80
-        private const val HOUGH_MIN_LINE_LENGTH = 100.0
+        private const val HOUGH_MIN_LINE_LENGTH = 50.0    // was 100.0
         private const val HOUGH_MAX_LINE_GAP = 10.0
-        private const val ANGLE_TOLERANCE_DEG = 20.0
-        private const val MIN_QUAD_AREA_RATIO = 0.15
+        private const val ANGLE_TOLERANCE_DEG = 30.0      // was 20.0
+        private const val MIN_QUAD_AREA_RATIO = 0.05      // was 0.15
+        private const val WHITE_THRESHOLD = 180.0
     }
 
     private var framesProcessed = 0
@@ -57,6 +58,7 @@ class CourtDetector(
             rgbaMat = Mat(); grayMat = Mat(); edgesMat = Mat(); linesMat = Mat()
             Utils.bitmapToMat(bitmap, rgbaMat)
             Imgproc.cvtColor(rgbaMat, grayMat, Imgproc.COLOR_RGBA2GRAY)
+            Imgproc.threshold(grayMat, grayMat, WHITE_THRESHOLD, 255.0, Imgproc.THRESH_TOZERO)
             Imgproc.Canny(grayMat, edgesMat, CANNY_LOW, CANNY_HIGH)
             Imgproc.HoughLinesP(
                 edgesMat, linesMat, 1.0, Math.PI / 180.0,

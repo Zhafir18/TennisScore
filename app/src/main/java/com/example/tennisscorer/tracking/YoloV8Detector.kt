@@ -42,6 +42,7 @@ class YoloV8Detector(
             buf.putFloat(((pixel shr 8)  and 0xFF) / 255f)
             buf.putFloat((pixel          and 0xFF) / 255f)
         }
+        buf.rewind()
         return buf
     }
 

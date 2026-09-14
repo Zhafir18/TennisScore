@@ -139,6 +139,7 @@ fun CameraScreen(
                 val ballDetectorError by viewModel.ballDetectorError.collectAsState()
                 val heatmapBitmap by viewModel.heatmapBitmap.collectAsState()
                 val bounceCount by viewModel.bounceCount.collectAsState()
+                val ballCourtPos by viewModel.ballCourtPos.collectAsState()
                 val isRecording by viewModel.isRecording.collectAsState()
                 val isVideoAvailable by viewModel.isVideoAvailable.collectAsState()
                 val recordingError by viewModel.recordingError.collectAsState()
@@ -332,6 +333,7 @@ fun CameraScreen(
                     CourtHeatmapView(
                         heatmapBitmap = heatmapBitmap,
                         bounceCount = bounceCount,
+                        liveBallCourtPos = ballCourtPos,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

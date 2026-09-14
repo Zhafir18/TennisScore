@@ -1,6 +1,7 @@
 package com.example.tennisscorer.ui.components
 
 import android.graphics.Bitmap
+import android.graphics.PointF
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import com.example.tennisscorer.tracking.HomographyMapper
 fun CourtHeatmapView(
     heatmapBitmap: Bitmap?,
     bounceCount: Int,
+    liveBallCourtPos: PointF? = null,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.background(Color.Black)) {
@@ -61,6 +63,19 @@ fun CourtHeatmapView(
                     dstSize = IntSize(size.width.toInt(), size.height.toInt()),
                     alpha = 0.75f
                 )
+            }
+
+            // Live ball dot
+            liveBallCourtPos?.let { pos ->
+                val bx = (pos.x / HomographyMapper.COURT_WIDTH_M) * size.width
+                val by = (pos.y / HomographyMapper.COURT_LENGTH_M) * size.height
+                if (bx in 0f..size.width && by in 0f..size.height) {
+                    drawCircle(
+                        color = Color(0xFF00FFFF),
+                        radius = 4.dp.toPx(),
+                        center = Offset(bx, by)
+                    )
+                }
             }
         }
 

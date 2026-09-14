@@ -51,6 +51,8 @@ class BallTrackingViewModel(
         fun factory(engine: TennisScoreEngine, bounceRepo: BounceRepository): ViewModelProvider.Factory = viewModelFactory {
             initializer { BallTrackingViewModel(engine, bounceRepo) }
         }
+        const val IMAGE_WIDTH  = 640f
+        const val IMAGE_HEIGHT = 480f
     }
 
     private val _permissionGranted = MutableStateFlow(false)
@@ -70,6 +72,9 @@ class BallTrackingViewModel(
 
     private val _trackedBall = MutableStateFlow<TrackedBall?>(null)
     val trackedBall: StateFlow<TrackedBall?> = _trackedBall.asStateFlow()
+
+    private val _ballCourtPos = MutableStateFlow<PointF?>(null)
+    val ballCourtPos: StateFlow<PointF?> = _ballCourtPos.asStateFlow()
 
     private val _heatmapBitmap = MutableStateFlow<Bitmap?>(null)
     val heatmapBitmap: StateFlow<Bitmap?> = _heatmapBitmap.asStateFlow()
@@ -136,9 +141,14 @@ class BallTrackingViewModel(
         _trackedBall.value = tracked
         if (tracked != null) {
             val mapper = (_calibrationState.value as? CalibrationState.Calibrated)?.mapper
-            val courtPos = mapper?.mapToCourtCoords(tracked.position)
+            val courtPos = mapper?.mapToCourtCoords(
+                PointF(tracked.position.x * IMAGE_WIDTH, tracked.position.y * IMAGE_HEIGHT)
+            )
+            _ballCourtPos.value = courtPos
             val event = bounceDetector.process(tracked.velocity.y, courtPos, tracked.isPredicted)
             if (event is BounceEvent.PointAwarded) handleBounceEvent(event)
+        } else {
+            _ballCourtPos.value = null
         }
     }
 

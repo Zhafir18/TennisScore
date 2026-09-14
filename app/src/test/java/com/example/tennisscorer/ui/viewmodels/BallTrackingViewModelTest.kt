@@ -130,4 +130,21 @@ class BallTrackingViewModelTest {
         vm.stopRecording()
         assertFalse(vm.isRecording.value)
     }
+
+    @Test fun `ballCourtPos starts null`() {
+        assertNull(vm.ballCourtPos.value)
+    }
+
+    @Test fun `processBallUpdate without calibration keeps ballCourtPos null`() {
+        val detection = Detection(boundingBox = RectF(0.5f, 0.5f, 0.6f, 0.6f), confidence = 0.9f)
+        vm.processBallUpdate(detection)
+        assertNull(vm.ballCourtPos.value)
+    }
+
+    @Test fun `processBallUpdate with null detection clears ballCourtPos`() {
+        val detection = Detection(boundingBox = RectF(0.5f, 0.5f, 0.6f, 0.6f), confidence = 0.9f)
+        vm.processBallUpdate(detection)
+        vm.processBallUpdate(null)
+        assertNull(vm.ballCourtPos.value)
+    }
 }

@@ -146,6 +146,7 @@ fun CameraScreen(
                 val isRecording by viewModel.isRecording.collectAsState()
                 val isVideoAvailable by viewModel.isVideoAvailable.collectAsState()
                 val recordingError by viewModel.recordingError.collectAsState()
+                val scoreState by engine.scoreState.collectAsState()
 
                 var recordingSeconds by remember { mutableIntStateOf(0) }
                 LaunchedEffect(isRecording) {
@@ -400,6 +401,53 @@ fun CameraScreen(
                             .align(Alignment.TopStart)
                             .padding(8.dp)
                     )
+                }
+
+                // Score overlay — pojok kanan atas
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = scoreState.p1Name.take(9),
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                modifier = Modifier.width(72.dp)
+                            )
+                            Text("${scoreState.p1Sets}", color = CyanAccent, fontSize = 11.sp, modifier = Modifier.width(16.dp), textAlign = TextAlign.Center)
+                            Text("${scoreState.p1Games}", color = Color.White, fontSize = 11.sp, modifier = Modifier.width(16.dp), textAlign = TextAlign.Center)
+                            Text(scoreState.p1DisplayScore, color = Color.Yellow, fontSize = 11.sp, modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = scoreState.p2Name.take(9),
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                modifier = Modifier.width(72.dp)
+                            )
+                            Text("${scoreState.p2Sets}", color = CyanAccent, fontSize = 11.sp, modifier = Modifier.width(16.dp), textAlign = TextAlign.Center)
+                            Text("${scoreState.p2Games}", color = Color.White, fontSize = 11.sp, modifier = Modifier.width(16.dp), textAlign = TextAlign.Center)
+                            Text(scoreState.p2DisplayScore, color = Color.Yellow, fontSize = 11.sp, modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
+                        }
+                        if (scoreState.isMatchFinished) {
+                            Text(
+                                text = "Selesai: ${scoreState.winnerName}",
+                                color = CyanAccent,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
                 }
 
                 // Mini-map heatmap — pojok kanan bawah

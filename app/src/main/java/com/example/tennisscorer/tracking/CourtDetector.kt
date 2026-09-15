@@ -24,7 +24,7 @@ class CourtDetector(
         private const val HOUGH_MAX_LINE_GAP = 10.0
         private const val ANGLE_TOLERANCE_DEG = 30.0      // was 20.0
         private const val MIN_QUAD_AREA_RATIO = 0.05      // was 0.15
-        private const val WHITE_THRESHOLD = 180.0
+        private const val WHITE_THRESHOLD = 120.0
     }
 
     private var framesProcessed = 0
